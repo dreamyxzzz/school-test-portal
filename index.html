@@ -1,8 +1,3 @@
-Ось твій повний код (усі 1100+ рядків з твоїми тестами, базою питань, стилями та скриптами), у якому я акуратно вирізав **тільки** блок `securityCheck` з перевіркою таймзони та мови.
-
-Жодного іншого функціоналу, кнопок чи тестів не зачеплено. Скопіюй цей код повністю і встав у свій `index.html`:
-
-```html
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -570,8 +565,620 @@
 
     <script>
         let lastClickTime = 0;
+        let quizStartTime = 0;
+
+        let verifiedStatus = localStorage.getItem('schoolPortalVerified') || '';
+        let currentTeacher = JSON.parse(localStorage.getItem('teacherAccount') || 'null');
+        let teacherRequests = JSON.parse(localStorage.getItem('teacherRequests') || '[]');
+        let totalVisits = parseInt(localStorage.getItem('totalVisitsCounter') || '0') + 1;
+        
+        let studentsScores = JSON.parse(localStorage.getItem('studentsScores') || 'null');
+        if (!studentsScores) {
+            studentsScores = [];
+            const sampleNames = ["Максим", "Софія", "Артем", "Оля", "Нікіта", "Матвей", "Віка", "Данило", "Катя", "Тимур", "Дмитро", "Аліна", "Єгор", "Злата", "Іван"];
+            for (let i = 1; i <= 1000; i++) {
+                const randomName = sampleNames[i % sampleNames.length] + (i > 15 ? ' ' + i : '');
+                studentsScores.push({
+                    name: randomName,
+                    testsDone: Math.floor(Math.random() * 45) + 1,
+                    correctAnswers: Math.floor(Math.random() * 400) + 10,
+                    hoursSpent: parseFloat((Math.random() * 15 + 0.5).toFixed(1))
+                });
+            }
+            localStorage.setItem('studentsScores', JSON.stringify(studentsScores));
+        }
+
+        localStorage.setItem('totalVisitsCounter', totalVisits.toString());
+
+        let selectedOptionId = null;
+
+        function selectVerifyOption(id) {
+            document.querySelectorAll('.verify-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`cardOption${id}`).classList.add('active');
+            selectedOptionId = id;
+            const btn = document.getElementById('verifyProceedBtn');
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+
+        function completeVerification() {
+            if (!selectedOptionId) return;
+            const statuses = { 1: "Учень", 2: "Вчитель", 3: "Гість" };
+            verifiedStatus = statuses[selectedOptionId];
+            localStorage.setItem('schoolPortalVerified', verifiedStatus);
+            document.getElementById('verifyModal').style.display = 'none';
+            updateWelcomeText();
+        }
+
+        function bypassWithoutName() {
+            const passInput = document.getElementById('passWithoutNameInput').value;
+            if (passInput === 'timur12345') {
+                verifiedStatus = "Тимур (Адмін)";
+                localStorage.setItem('schoolPortalVerified', verifiedStatus);
+                document.getElementById('verifyModal').style.display = 'none';
+                updateWelcomeText();
+                renderTests();
+            } else {
+                alert("Невірний пароль!");
+            }
+        }
+
+        window.onload = function() {
+            if (verifiedStatus) {
+                document.getElementById('verifyModal').style.display = 'none';
+                updateWelcomeText();
+            } else {
+                document.getElementById('verifyModal').style.display = 'flex';
+            }
+
+            renderTests();
+            renderTopStudents();
+            updateTeacherStatusBtn();
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('schoolPortalVerified');
+            localStorage.removeItem('teacherAccount');
+            verifiedStatus = '';
+            currentTeacher = null;
+            document.getElementById('verifyModal').style.display = 'flex';
+            updateTeacherStatusBtn();
+        }
+
+        function renderTopStudents() {
+            const container = document.getElementById('topStudentsList');
+            container.innerHTML = '';
+            studentsScores.sort((a, b) => b.correctAnswers - a.correctAnswers);
+            
+            const maxTests = 50, maxAnswers = 500, maxHours = 20;
+
+            studentsScores.forEach((st, idx) => {
+                const rank = idx + 1;
+                let medal = `#${rank}`;
+                if (rank === 1) medal = '🥇';
+                else if (rank === 2) medal = '🥈';
+                else if (rank === 3) medal = '🥉';
+
+                const testPercent = Math.min(100, (st.testsDone / maxTests) * 100);
+                const answerPercent = Math.min(100, (st.correctAnswers / maxAnswers) * 100);
+                const timePercent = Math.min(100, (st.hoursSpent / maxHours) * 100);
+
+                const card = document.createElement('div');
+                card.className = 'top-student-card';
+                card.innerHTML = `
+                    <div class="top-student-header"><span>${medal} ${st.name}</span></div>
+                    <div class="stat-bar-group">
+                        <div class="stat-bar-label"><span>Зроблено тестів:</span> <b>${st.testsDone}</b></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-tests" style="width: ${testPercent}%;"></div></div>
+                    </div>
+                    <div class="stat-bar-group">
+                        <div class="stat-bar-label"><span>Правильні відповіді:</span> <b>${st.correctAnswers}</b></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-answers" style="width: ${answerPercent}%;"></div></div>
+                    </div>
+                    <div class="stat-bar-group">
+                        <div class="stat-bar-label"><span>Час на порталі:</span> <b>${st.hoursSpent} год.</b></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-time" style="width: ${timePercent}%;"></div></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateWelcomeText() {
+            if (verifiedStatus) {
+                document.getElementById('welcomeUserText').innerText = currentTeacher && currentTeacher.approved 
+                    ? `Кабінет вчителя: ${currentTeacher.name} (Підтверджено ✅)` 
+                    : `Статус: ${verifiedStatus} ✨`;
+            }
+        }
+
+        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
+        
+        function checkAdminPass() {
+            const pass = document.getElementById('adminPassInput').value;
+            if (pass === 'timur12345') {
+                closeAdminModal();
+                document.getElementById('adminDashboardModal').style.display = 'flex';
+                document.getElementById('statTotalVisits').innerText = totalVisits;
+                
+                const paidTeachers = teacherRequests.filter(r => r.method === 'card').length;
+                const totalMoney = paidTeachers * 25;
+                document.getElementById('statTotalMoney').innerText = totalMoney + ' грн';
+
+                renderAdminRequests();
+            } else {
+                alert("Невірний пароль адміністратора!");
+            }
+        }
+        function closeAdminDashboard() { document.getElementById('adminDashboardModal').style.display = 'none'; }
+
+        function adminBypassTeacherLogin() {
+            currentTeacher = { name: "Тимур (Головний Адмін/Вчитель)", school: "Головна освітня платформа", email: "admin@portal.ua", approved: true };
+            localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+            closeAdminDashboard();
+            updateTeacherStatusBtn();
+            updateWelcomeText();
+            renderTests();
+            alert("Ви успішно увійшли як Головний Вчитель із повним доступом!");
+        }
+
+        function renderAdminRequests() {
+            const list = document.getElementById('adminRequestsList');
+            list.innerHTML = '';
+            if (teacherRequests.length === 0) {
+                list.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 15px;">Немає нових заяв вчителів.</p>';
+                return;
+            }
+            let html = '';
+            teacherRequests.forEach((req, idx) => {
+                html += `
+                    <div class="teacher-request-item">
+                        <p><b>Вчитель ПІБ:</b> ${req.name}</p>
+                        <p><b>Школа:</b> ${req.school}</p>
+                        <p><b>Статус:</b> <span style="color: ${req.approved ? '#10b981' : '#f59e0b'}">${req.approved ? 'Підтверджено' : 'Очікує'}</span></p>
+                        <div style="margin-top: 8px; display: flex; gap: 8px;">
+                            ${!req.approved ? `<button class="start-btn" style="padding: 6px 12px; font-size: 12px;" onclick="approveTeacher(${idx})">Схвалити ✓</button>` : ''}
+                            <button class="back-btn" style="padding: 6px 12px; font-size: 12px;" onclick="deleteTeacherReq(${idx})">Видалити ✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        function approveTeacher(idx) {
+            teacherRequests[idx].approved = true;
+            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+            renderAdminRequests();
+            alert("Заявку вчителя схвалено!");
+        }
+
+        function deleteTeacherReq(idx) {
+            teacherRequests.splice(idx, 1);
+            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+            renderAdminRequests();
+        }
+
+        function openTeacherAuthModal() {
+            const modal = document.getElementById('teacherAuthModal');
+            modal.style.display = 'flex';
+            if (currentTeacher && currentTeacher.approved) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('teacherDashboardContent').style.display = 'block';
+                document.getElementById('authTitle').innerText = 'Кабінет вчителя (Відповіді) 👨‍🏫';
+                renderTeacherAnswers();
+            } else {
+                document.getElementById('teacherDashboardContent').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+            }
+        }
+        function closeTeacherModal() { document.getElementById('teacherAuthModal').style.display = 'none'; }
+        
+        function handleTeacherLogout() {
+            currentTeacher = null;
+            localStorage.removeItem('teacherAccount');
+            updateTeacherStatusBtn();
+            closeTeacherModal();
+            alert("Ви вийшли з акаунта вчителя.");
+        }
+
+        function renderTeacherAnswers() {
+            const container = document.getElementById('teacherAnswersListContainer');
+            container.innerHTML = '';
+            if (testsData.length === 0) { container.innerHTML = '<p style="color: #94a3b8;">Немає тестів.</p>'; return; }
+            testsData.forEach(test => {
+                let html = `<div class="teacher-answer-item"><b>[${test.classLevel}] ${test.title}</b><ul style="margin-left: 20px; margin-top: 5px; color: #38bdf8;">`;
+                test.questions.forEach((q, qIdx) => {
+                    html += `<li>Питання ${qIdx + 1}: <span style="color: #34d399;">${q.q}</span> → <b>${q.options[q.correct]}</b></li>`;
+                });
+                html += `</ul></div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        function toggleAuthMode(mode) {
+            if (mode === 'register') {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+                document.getElementById('authTitle').innerText = 'Реєстрація вчителя 📝';
+            } else {
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('authTitle').innerText = 'Кабінет вчителя 👨‍🏫';
+            }
+        }
+
+        function handleTeacherRegister() {
+            const name = document.getElementById('regName').value.trim();
+            const school = document.getElementById('regSchool').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
+            const receipt = document.getElementById('receiptInput').value.trim();
+
+            if (!name || !email || !pass) { alert("Будь ласка, заповніть усі обов'язкові поля!"); return; }
+
+            const newReq = { name, school, email, pass, method: 'card', receipt, approved: false };
+            teacherRequests.push(newReq);
+            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+            
+            currentTeacher = newReq;
+            localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+
+            closeTeacherModal();
+            updateTeacherStatusBtn();
+            updateWelcomeText();
+            alert("Заявку надіслано! Адміністратор перевірить дані.");
+        }
+
+        function handleTeacherLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            const found = teacherRequests.find(r => r.email === email && r.pass === pass);
+            if (found) {
+                currentTeacher = found;
+                localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+                closeTeacherModal();
+                updateTeacherStatusBtn();
+                updateWelcomeText();
+                renderTests();
+                alert(`Вітаємо, вчителю ${found.name}!`);
+            } else {
+                alert("Невірний email або пароль!");
+            }
+        }
+
+        function updateTeacherStatusBtn() {
+            const btn = document.getElementById('btnTeacherCtrl');
+            if (currentTeacher) {
+                btn.innerText = currentTeacher.approved ? "Контрольні (Вчителі ✅)" : "Контрольні (На перевірці ⏳)";
+            } else {
+                btn.innerText = "Контрольні (Вчителі) 👨‍🏫";
+            }
+        }
+
+        // --- БАЗА ПИТАНЬ ---
+        const sampleQuestionsPool = [
+            { q: "Скільки буде 2 + 2 * 2 за правилами математики?", options: ["6", "8", "4", "2"], correct: 0, explain: "Спочатку виконується множення: 2 * 2 = 4, а потім додавання: 2 + 4 = 6." },
+            { q: "Яка планета Сонячної системи знаходиться найближче до Сонця?", options: ["Венера", "Меркурій", "Марс", "Земля"], correct: 1, explain: "Меркурій — перша планета від Сонця." },
+            { q: "Який материк є найбільшим за площею на Землі?", options: ["Африка", "Північна Америка", "Євразія", "Антарктида"], correct: 2, explain: "Євразія — найбільший континент." },
+            { q: "Скільки хвилин у трьох з половиною годинах?", options: ["180 хв", "210 хв", "190 хв", "240 хв"], correct: 1, explain: "3 години по 60 хв = 180 хв + 30 хв = 210 хвилин." },
+            { q: "Який газ переважає в атмосфері Землі?", options: ["Кисень", "Вуглекислий газ", "Азот", "Водень"], correct: 2, explain: "Азот становить приблизно 78% земної атмосфери." },
+            { q: "Хто написав знамениту поему «Енеїда» українською мовою?", options: ["Тарас Шевченко", "Іван Котляревський", "Іван Франко", "Леся Українка"], correct: 1, explain: "Іван Котляревський — автор першої епохальної книги нової української літератури." },
+            { q: "Яка одиниця вимірювання сили електричного струму?", options: ["Вольт", "Ом", "Ампер", "Ват"], correct: 2, explain: "Сила струму вимірюється в амперах (А)." },
+            { q: "У якому столітті було засновано місто Київ (за літописною традицією)?", options: ["V століття", "IX століття", "XI століття", "XII століття"], correct: 1, explain: "Київ засновано наприкінці V — на початку VI ст., а перша письмова згадка в літописах — кінець IX століття." },
+            { q: "Яка тварина є найшвидшою на суходолі?", options: ["Лев", "Антилопа гну", "Гепард", "Кінь"], correct: 2, explain: "Гепард здатен розвивати швидкість понад 100 км/год." },
+            { q: "Чому дорівнює число Пі (π) з округленням до сотих?", options: ["3.14", "3.16", "3.12", "3.18"], correct: 0, explain: "Число Пі приблизно дорівнює 3.14159..." },
+            { q: "Який океан є найбільшим і найглибшим на планеті?", options: ["Атлантичний", "Індійський", "Тихий", "Північний Льодовитий"], correct: 2, explain: "Тихий океан — найбільший і найглибший." },
+            { q: "Який орган людини споживає найбільше кисню у відсотковому співвідношенні до маси?", options: ["Серце", "Мозок", "Печінка", "Легені"], correct: 1, explain: "Головний мозок споживає близько 20% усього кисню організму." }
+        ];
+
+        const testsData = [];
+        const subjectsList = ['Історія України', 'Всесвітня історія', 'Біологія', 'Географія'];
+        const classesList = ['5 клас', '6 клас', '7 клас', '8 клас', '9 клас'];
+        const authorsList = ['Власов', 'Гісем', 'Остапченко', 'Пестушко', 'Соболь', 'Пометун', 'Бойко', 'Задорожний'];
+
+        let testCounter = 1;
+        classesList.forEach(cls => {
+            subjectsList.forEach(subj => {
+                for (let i = 1; i <= 6; i++) {
+                    const authorName = authorsList[(testCounter + i) % authorsList.length];
+                    const shuffledQuestions = [...sampleQuestionsPool].sort(() => Math.random() - 0.5);
+                    testsData.push({
+                        id: `test_${cls}_${subj}_${i}`,
+                        classLevel: cls,
+                        category: subj,
+                        author: authorName,
+                        title: `${cls}: ${subj} (Тест №${i} за ${authorName})`,
+                        desc: `Поглиблений інтерактивний тест на 12 питань для учнів ${cls} з предмету ${subj}.`,
+                        questions: shuffledQuestions
+                    });
+                    testCounter++;
+                }
+            });
+        });
+
+        classesList.forEach(cls => {
+            subjectsList.forEach(subj => {
+                const shuffledQuestions = [...sampleQuestionsPool].sort(() => Math.random() - 0.5);
+                testsData.push({
+                    id: `test_ctrl_${cls}_${subj}`,
+                    classLevel: cls,
+                    category: 'Контрольні роботи',
+                    author: 'Експертна комісія',
+                    title: `Велика підсумкова контрольна: ${cls} (${subj})`,
+                    desc: `Офіційна підсумкова контрольна робота з предмету ${subj} для перевірки знань за курс ${cls}.`,
+                    questions: shuffledQuestions
+                });
+            });
+        });
+
+        let currentQuiz = null, currentQuestionIdx = 0, score = 0, currentCategory = 'all', currentClass = 'all';
+
+        function filterCategory(cat, btn) {
+            currentCategory = cat;
+            document.querySelectorAll('.categories-nav .filter-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            const backBtn = document.getElementById('backToTestsBtn');
+            if (cat === 'Контрольні роботи') { backBtn.style.display = 'block'; }
+            else { backBtn.style.display = 'none'; }
+            renderTests();
+        }
+
+        function resetToAllTests() {
+            currentCategory = 'all';
+            currentClass = 'all';
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.classes-nav .filter-btn')[0].classList.add('active');
+            document.querySelectorAll('.categories-nav .filter-btn')[0].classList.add('active');
+            document.getElementById('backToTestsBtn').style.display = 'none';
+            renderTests();
+        }
+
+        function filterClass(cls, btn) {
+            currentClass = cls;
+            document.querySelectorAll('.classes-nav .filter-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            renderTests();
+        }
+
+        function renderTests() {
+            const grid = document.getElementById('testsGrid');
+            const searchInput = document.getElementById('searchInput');
+            const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            grid.innerHTML = '';
+
+            const isTeacherApproved = currentTeacher && currentTeacher.approved;
+
+            const filtered = testsData.filter(test => {
+                const matchCat = currentCategory === 'all' || test.category === currentCategory;
+                const matchClass = currentClass === 'all' || test.classLevel === currentClass;
+                const matchSearch = search === '' || 
+                    test.title.toLowerCase().includes(search) || 
+                    test.desc.toLowerCase().includes(search) || 
+                    test.category.toLowerCase().includes(search) ||
+                    test.author.toLowerCase().includes(search) ||
+                    test.classLevel.toLowerCase().includes(search);
+
+                return matchCat && matchClass && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px;">Нічого не знайдено за вашим запитом 🔍</div>';
+                return;
+            }
+
+            filtered.forEach((test) => {
+                let cardClass = 'test-card default';
+                if (currentCategory !== 'all') {
+                    if (test.category === 'Біологія') {
+                        cardClass = 'test-card bio';
+                    } else if (test.category === 'Географія') {
+                        cardClass = 'test-card geo';
+                    } else if (test.category === 'Історія України' || test.category === 'Всесвітня історія') {
+                        cardClass = 'test-card history';
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = cardClass;
+                card.innerHTML = `
+                    <div class="badge-row">
+                        <span class="badge badge-class">${test.classLevel}</span>
+                        <span class="badge">${test.category}</span>
+                    </div>
+                    <span class="badge badge-author">${test.author}</span>
+                    <h3>${test.title}</h3>
+                    <p>${test.desc}</p>
+                    ${isTeacherApproved ? `<div style="font-size:12px; color:#10b981; font-weight:bold;">👨‍🏫 Режим вчителя: підказки активовані</div>` : ''}
+                    <div class="meta-info">
+                        <span>📝 ${test.questions.length} питань</span>
+                        <span>⏱️ ~ 7 хв</span>
+                    </div>
+                    <button class="start-btn" onclick="startQuiz('${test.id}')">Розпочати тест 🚀</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function startQuiz(testId) {
+            const now = Date.now();
+            if (now - lastClickTime < 600) return;
+            lastClickTime = now;
+
+            quizStartTime = Date.now();
+            currentQuiz = testsData.find(t => t.id === testId);
+            currentQuestionIdx = 0;
+            score = 0;
+            document.getElementById('menuView').style.display = 'none';
+            document.getElementById('resultsView').style.display = 'none';
+            document.getElementById('quizView').style.display = 'block';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const qData = currentQuiz.questions[currentQuestionIdx];
+            document.getElementById('quizProgress').innerText = `Питання ${currentQuestionIdx + 1} з ${currentQuiz.questions.length}`;
+            document.getElementById('questionText').innerText = qData.q;
+            
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+
+            const optionsList = document.getElementById('optionsList');
+            optionsList.innerHTML = '';
+
+            const isTeacherApproved = currentTeacher && currentTeacher.approved;
+
+            qData.options.forEach((opt, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'option-wrapper';
+
+                const badge = document.createElement('div');
+                badge.className = 'feedback-badge';
+                badge.id = `feedbackBadge_${idx}`;
+
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.id = `optionBtn_${idx}`;
+                btn.innerText = opt + (isTeacherApproved && idx === qData.correct ? '  (✓ Правильна відповідь)' : '');
+                btn.onclick = () => selectOption(idx);
+
+                wrapper.appendChild(badge);
+                wrapper.appendChild(btn);
+                optionsList.appendChild(wrapper);
+            });
+        }
+
+        function selectOption(selectedIdx) {
+            const now = Date.now();
+            if (now - lastClickTime < 400) return;
+            lastClickTime = now;
+
+            const qData = currentQuiz.questions[currentQuestionIdx];
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.disabled = true);
+
+            const statusEl = document.getElementById('explanationStatus');
+            const explainTextEl = document.getElementById('explanationText');
+            const badge = document.getElementById(`feedbackBadge_${selectedIdx}`);
+
+            if (selectedIdx === qData.correct) {
+                buttons[selectedIdx].classList.add('correct');
+                badge.innerText = "Добре! ✨";
+                badge.className = "feedback-badge good";
+                badge.style.display = "block";
+
+                statusEl.innerText = "Правильно! 🎉";
+                statusEl.style.color = "#10b981";
+                score++;
+            } else {
+                buttons[selectedIdx].classList.add('wrong');
+                buttons[qData.correct].classList.add('correct');
+                
+                badge.innerText = "Не спиши! ❌";
+                badge.className = "feedback-badge bad";
+                badge.style.display = "block";
+
+                statusEl.innerText = "Неправильно ❌";
+                statusEl.style.color = "#ef4444";
+            }
+
+            explainTextEl.innerText = qData.explain;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestionIdx++;
+            if (currentQuestionIdx < currentQuiz.questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            const timeElapsedSec = (Date.now() - quizStartTime) / 1000;
+            const timeElapsedHours = parseFloat((timeElapsedSec / 3600).toFixed(3));
+
+            document.getElementById('quizView').style.display = 'none';
+            document.getElementById('resultsView').style.display = 'block';
+            
+            const total = currentQuiz.questions.length;
+            const percent = (score / total) * 100;
+
+            let topUserIndex = studentsScores.findIndex(s => s.name === verifiedStatus);
+            if (topUserIndex !== -1) {
+                studentsScores[topUserIndex].testsDone += 1;
+                studentsScores[topUserIndex].correctAnswers += score;
+                studentsScores[topUserIndex].hoursSpent = parseFloat((studentsScores[topUserIndex].hoursSpent + timeElapsedHours).toFixed(2));
+            } else {
+                studentsScores.unshift({
+                    name: verifiedStatus || "Активний учень",
+                    testsDone: 1,
+                    correctAnswers: score,
+                    hoursSpent: Math.max(0.1, timeElapsedHours)
+                });
+            }
+            localStorage.setItem('studentsScores', JSON.stringify(studentsScores));
+
+            document.getElementById('scoreText').innerText = `Результат: ${score} з ${total}`;
+            document.getElementById('feedbackText').innerText = score === total 
+                ? `Супер! Чудовий результат, ти знаєш усе на максимум! 🔥` 
+                : `Непогано! Ознайомся з поясненнями та спробуй ще раз! 👍`;
+
+            const visualContainer = document.getElementById('resultVisualContainer');
+            visualContainer.innerHTML = '';
+            const subject = currentQuiz.category;
+
+            if (subject === 'Біологія') {
+                visualContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="position: relative; display: inline-block;">
+                            <div class="flask-neck"></div>
+                            <div class="flask-wrapper">
+                                <div class="flask-liquid" style="height: ${percent}%;"></div>
+                            </div>
+                        </div>
+                        <p style="color: #38bdf8; font-size: 13px; margin-top: 8px;">Рівень заповнення колби: ${Math.round(percent)}% 🧪</p>
+                    </div>
+                `;
+            } else if (subject === 'Географія') {
+                visualContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="display: flex; justify-content: center; margin-bottom: 8px;">
+                            <div class="globe-container">🌐</div>
+                        </div>
+                        <p style="color: #38bdf8; font-size: 13px;">Планета знань обертається для тебе! 🌍</p>
+                    </div>
+                `;
+            } else if (subject.includes('Історія')) {
+                visualContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div class="history-artifacts-box">
+                            <span>⚔️</span>
+                            <span>🏺</span>
+                            <span>👑</span>
+                            <span>📜</span>
+                        </div>
+                        <p style="color: #38bdf8; font-size: 13px; margin-top: 10px;">Стародавні артефакти визнали твою мудрість! 🏛️</p>
+                    </div>
+                `;
+            } else {
+                visualContainer.innerHTML = `<div style="font-size: 50px;">🏆</div>`;
+            }
+        }
+
+        function showMenu() {
+            document.getElementById('quizView').style.display = 'none';
+            document.getElementById('resultsView').style.display = 'none';
+            document.getElementById('menuView').style.display = 'grid';
+            renderTests();
+            renderTopStudents();
+        }
     </script>
 </body>
 </html>
-
-```
+```[cite: 3]
