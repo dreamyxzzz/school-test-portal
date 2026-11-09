@@ -1,3 +1,6 @@
+
+
+```html
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -489,7 +492,7 @@
         
         <div class="header-buttons-right">
             <button class="header-btn" onclick="filterCategory('all', null)">Усі тести 📖</button>
-            <button class="header-btn header-btn-student" id="btnStudentCtrl" onclick="filterCategory('Контрольні роботи', document.querySelector('.categories-nav .filter-btn'))">Контрольні (Учні) 📝</button>
+            <button class="header-btn header-btn-student" id="btnStudentCtrl" onclick="filterCategory('Контрольні роботи', null)">Контрольні (Учні) 📝</button>
             <button class="header-btn" id="btnTeacherCtrl" onclick="openTeacherAuthModal()">Контрольні (Вчителі) 👨‍🏫</button>
             <button class="header-btn header-btn-logout" onclick="logoutUser()">Вийти з акаунта 🚪</button>
         </div>
@@ -564,95 +567,110 @@
     <footer><p>© 2026 Навчальний портал. Офіційна освітня платформа.</p></footer>
 
     <script>
-        let lastClickTime = 0;
-        let quizStartTime = 0;
+        document.addEventListener("DOMContentLoaded", function () {
+            window.lastClickTime = 0;
+            window.quizStartTime = 0;
 
-        let verifiedStatus = localStorage.getItem('schoolPortalVerified') || '';
-        let currentTeacher = JSON.parse(localStorage.getItem('teacherAccount') || 'null');
-        let teacherRequests = JSON.parse(localStorage.getItem('teacherRequests') || '[]');
-        let totalVisits = parseInt(localStorage.getItem('totalVisitsCounter') || '0') + 1;
-        
-        let studentsScores = JSON.parse(localStorage.getItem('studentsScores') || 'null');
-        if (!studentsScores) {
-            studentsScores = [];
-            const sampleNames = ["Максим", "Софія", "Артем", "Оля", "Нікіта", "Матвей", "Віка", "Данило", "Катя", "Тимур", "Дмитро", "Аліна", "Єгор", "Злата", "Іван"];
-            for (let i = 1; i <= 1000; i++) {
-                const randomName = sampleNames[i % sampleNames.length] + (i > 15 ? ' ' + i : '');
-                studentsScores.push({
-                    name: randomName,
-                    testsDone: Math.floor(Math.random() * 45) + 1,
-                    correctAnswers: Math.floor(Math.random() * 400) + 10,
-                    hoursSpent: parseFloat((Math.random() * 15 + 0.5).toFixed(1))
-                });
+            window.verifiedStatus = localStorage.getItem('schoolPortalVerified') || '';
+            window.currentTeacher = JSON.parse(localStorage.getItem('teacherAccount') || 'null');
+            window.teacherRequests = JSON.parse(localStorage.getItem('teacherRequests') || '[]');
+            window.totalVisits = parseInt(localStorage.getItem('totalVisitsCounter') || '0') + 1;
+            
+            window.studentsScores = JSON.parse(localStorage.getItem('studentsScores') || 'null');
+            if (!studentsScores) {
+                window.studentsScores = [];
+                const sampleNames = ["Максим", "Софія", "Артем", "Оля", "Нікіта", "Матвей", "Віка", "Данило", "Катя", "Тимур", "Дмитро", "Аліна", "Єгор", "Злата", "Іван"];
+                for (let i = 1; i <= 1000; i++) {
+                    const randomName = sampleNames[i % sampleNames.length] + (i > 15 ? ' ' + i : '');
+                    studentsScores.push({
+                        name: randomName,
+                        testsDone: Math.floor(Math.random() * 45) + 1,
+                        correctAnswers: Math.floor(Math.random() * 400) + 10,
+                        hoursSpent: parseFloat((Math.random() * 15 + 0.5).toFixed(1))
+                    });
+                }
+                localStorage.setItem('studentsScores', JSON.stringify(studentsScores));
             }
-            localStorage.setItem('studentsScores', JSON.stringify(studentsScores));
-        }
 
-        localStorage.setItem('totalVisitsCounter', totalVisits.toString());
+            localStorage.setItem('totalVisitsCounter', totalVisits.toString());
 
-        let selectedOptionId = null;
+            window.selectedOptionId = null;
 
-        function selectVerifyOption(id) {
-            document.querySelectorAll('.verify-card').forEach(c => c.classList.remove('active'));
-            document.getElementById(`cardOption${id}`).classList.add('active');
-            selectedOptionId = id;
-            const btn = document.getElementById('verifyProceedBtn');
-            btn.style.opacity = '1';
-            btn.style.pointerEvents = 'auto';
-        }
+            window.selectVerifyOption = function(id) {
+                document.querySelectorAll('.verify-card').forEach(c => c.classList.remove('active'));
+                const card = document.getElementById(`cardOption${id}`);
+                if (card) card.classList.add('active');
+                window.selectedOptionId = id;
+                const btn = document.getElementById('verifyProceedBtn');
+                if (btn) {
+                    btn.style.opacity = '1';
+                    btn.style.pointerEvents = 'auto';
+                }
+            };
 
-        function completeVerification() {
-            if (!selectedOptionId) return;
-            const statuses = { 1: "Учень", 2: "Вчитель", 3: "Гість" };
-            verifiedStatus = statuses[selectedOptionId];
-            localStorage.setItem('schoolPortalVerified', verifiedStatus);
-            document.getElementById('verifyModal').style.display = 'none';
-            updateWelcomeText();
-        }
-
-        function bypassWithoutName() {
-            const passInput = document.getElementById('passWithoutNameInput').value;
-            if (passInput === 'timur12345') {
-                verifiedStatus = "Тимур (Адмін)";
-                localStorage.setItem('schoolPortalVerified', verifiedStatus);
-                document.getElementById('verifyModal').style.display = 'none';
+            window.completeVerification = function() {
+                if (!window.selectedOptionId) return;
+                const statuses = { 1: "Учень", 2: "Вчитель", 3: "Гість" };
+                window.verifiedStatus = statuses[window.selectedOptionId];
+                localStorage.setItem('schoolPortalVerified', window.verifiedStatus);
+                const modal = document.getElementById('verifyModal');
+                if (modal) modal.style.display = 'none';
                 updateWelcomeText();
-                renderTests();
-            } else {
-                alert("Невірний пароль!");
-            }
-        }
+            };
 
-        window.onload = function() {
-            if (verifiedStatus) {
-                document.getElementById('verifyModal').style.display = 'none';
+            window.bypassWithoutName = function() {
+                const passInput = document.getElementById('passWithoutNameInput');
+                if (passInput && passInput.value === 'timur12345') {
+                    window.verifiedStatus = "Тимур (Адмін)";
+                    localStorage.setItem('schoolPortalVerified', window.verifiedStatus);
+                    const modal = document.getElementById('verifyModal');
+                    if (modal) modal.style.display = 'none';
+                    updateWelcomeText();
+                    renderTests();
+                } else {
+                    alert("Невірний пароль!");
+                }
+            };
+
+            window.selectVerificationMethod = function(method) {
+                document.querySelectorAll('.verification-options-grid .verify-card').forEach(c => c.classList.remove('active'));
+                const card = document.getElementById('cardOptionCard');
+                if (card) card.classList.add('active');
+            };
+
+            if (window.verifiedStatus) {
+                const modal = document.getElementById('verifyModal');
+                if (modal) modal.style.display = 'none';
                 updateWelcomeText();
             } else {
-                document.getElementById('verifyModal').style.display = 'flex';
+                const modal = document.getElementById('verifyModal');
+                if (modal) modal.style.display = 'flex';
             }
 
             renderTests();
             renderTopStudents();
             updateTeacherStatusBtn();
-        }
+        });
 
-        function logoutUser() {
+        window.logoutUser = function() {
             localStorage.removeItem('schoolPortalVerified');
             localStorage.removeItem('teacherAccount');
-            verifiedStatus = '';
-            currentTeacher = null;
-            document.getElementById('verifyModal').style.display = 'flex';
+            window.verifiedStatus = '';
+            window.currentTeacher = null;
+            const modal = document.getElementById('verifyModal');
+            if (modal) modal.style.display = 'flex';
             updateTeacherStatusBtn();
-        }
+        };
 
-        function renderTopStudents() {
+        window.renderTopStudents = function() {
             const container = document.getElementById('topStudentsList');
+            if (!container) return;
             container.innerHTML = '';
-            studentsScores.sort((a, b) => b.correctAnswers - a.correctAnswers);
+            window.studentsScores.sort((a, b) => b.correctAnswers - a.correctAnswers);
             
             const maxTests = 50, maxAnswers = 500, maxHours = 20;
 
-            studentsScores.forEach((st, idx) => {
+            window.studentsScores.forEach((st, idx) => {
                 const rank = idx + 1;
                 let medal = `#${rank}`;
                 if (rank === 1) medal = '🥇';
@@ -682,56 +700,61 @@
                 `;
                 container.appendChild(card);
             });
-        }
+        };
 
-        function updateWelcomeText() {
-            if (verifiedStatus) {
-                document.getElementById('welcomeUserText').innerText = currentTeacher && currentTeacher.approved 
-                    ? `Кабінет вчителя: ${currentTeacher.name} (Підтверджено ✅)` 
-                    : `Статус: ${verifiedStatus} ✨`;
+        window.updateWelcomeText = function() {
+            const el = document.getElementById('welcomeUserText');
+            if (el && window.verifiedStatus) {
+                el.innerText = window.currentTeacher && window.currentTeacher.approved 
+                    ? `Кабінет вчителя: ${window.currentTeacher.name} (Підтверджено ✅)` 
+                    : `Статус: ${window.verifiedStatus} ✨`;
             }
-        }
+        };
 
-        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
-        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
+        window.openAdminModal = function() { const m = document.getElementById('adminModal'); if(m) m.style.display = 'flex'; };
+        window.closeAdminModal = function() { const m = document.getElementById('adminModal'); if(m) m.style.display = 'none'; };
         
-        function checkAdminPass() {
-            const pass = document.getElementById('adminPassInput').value;
-            if (pass === 'timur12345') {
+        window.checkAdminPass = function() {
+            const passInput = document.getElementById('adminPassInput');
+            if (passInput && passInput.value === 'timur12345') {
                 closeAdminModal();
-                document.getElementById('adminDashboardModal').style.display = 'flex';
-                document.getElementById('statTotalVisits').innerText = totalVisits;
+                const adminDash = document.getElementById('adminDashboardModal');
+                if (adminDash) adminDash.style.display = 'flex';
+                const totalVisitsEl = document.getElementById('statTotalVisits');
+                if (totalVisitsEl) totalVisitsEl.innerText = window.totalVisits;
                 
-                const paidTeachers = teacherRequests.filter(r => r.method === 'card').length;
+                const paidTeachers = window.teacherRequests.filter(r => r.method === 'card').length;
                 const totalMoney = paidTeachers * 25;
-                document.getElementById('statTotalMoney').innerText = totalMoney + ' грн';
+                const moneyEl = document.getElementById('statTotalMoney');
+                if (moneyEl) moneyEl.innerText = totalMoney + ' грн';
 
                 renderAdminRequests();
             } else {
                 alert("Невірний пароль адміністратора!");
             }
-        }
-        function closeAdminDashboard() { document.getElementById('adminDashboardModal').style.display = 'none'; }
+        };
+        window.closeAdminDashboard = function() { const m = document.getElementById('adminDashboardModal'); if(m) m.style.display = 'none'; };
 
-        function adminBypassTeacherLogin() {
-            currentTeacher = { name: "Тимур (Головний Адмін/Вчитель)", school: "Головна освітня платформа", email: "admin@portal.ua", approved: true };
-            localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+        window.adminBypassTeacherLogin = function() {
+            window.currentTeacher = { name: "Тимур (Головний Адмін/Вчитель)", school: "Головна освітня платформа", email: "admin@portal.ua", approved: true };
+            localStorage.setItem('teacherAccount', JSON.stringify(window.currentTeacher));
             closeAdminDashboard();
             updateTeacherStatusBtn();
             updateWelcomeText();
             renderTests();
             alert("Ви успішно увійшли як Головний Вчитель із повним доступом!");
-        }
+        };
 
-        function renderAdminRequests() {
+        window.renderAdminRequests = function() {
             const list = document.getElementById('adminRequestsList');
+            if (!list) return;
             list.innerHTML = '';
-            if (teacherRequests.length === 0) {
+            if (window.teacherRequests.length === 0) {
                 list.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 15px;">Немає нових заяв вчителів.</p>';
                 return;
             }
             let html = '';
-            teacherRequests.forEach((req, idx) => {
+            window.teacherRequests.forEach((req, idx) => {
                 html += `
                     <div class="teacher-request-item">
                         <p><b>Вчитель ПІБ:</b> ${req.name}</p>
@@ -745,50 +768,57 @@
                 `;
             });
             list.innerHTML = html;
-        }
+        };
 
-        function approveTeacher(idx) {
-            teacherRequests[idx].approved = true;
-            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+        window.approveTeacher = function(idx) {
+            window.teacherRequests[idx].approved = true;
+            localStorage.setItem('teacherRequests', JSON.stringify(window.teacherRequests));
             renderAdminRequests();
             alert("Заявку вчителя схвалено!");
-        }
+        };
 
-        function deleteTeacherReq(idx) {
-            teacherRequests.splice(idx, 1);
-            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+        window.deleteTeacherReq = function(idx) {
+            window.teacherRequests.splice(idx, 1);
+            localStorage.setItem('teacherRequests', JSON.stringify(window.teacherRequests));
             renderAdminRequests();
-        }
+        };
 
-        function openTeacherAuthModal() {
+        window.openTeacherAuthModal = function() {
             const modal = document.getElementById('teacherAuthModal');
-            modal.style.display = 'flex';
-            if (currentTeacher && currentTeacher.approved) {
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('registerForm').style.display = 'none';
-                document.getElementById('teacherDashboardContent').style.display = 'block';
-                document.getElementById('authTitle').innerText = 'Кабінет вчителя (Відповіді) 👨‍🏫';
+            if (modal) modal.style.display = 'flex';
+            if (window.currentTeacher && window.currentTeacher.approved) {
+                const lf = document.getElementById('loginForm');
+                const rf = document.getElementById('registerForm');
+                const dc = document.getElementById('teacherDashboardContent');
+                const title = document.getElementById('authTitle');
+                if (lf) lf.style.display = 'none';
+                if (rf) rf.style.display = 'none';
+                if (dc) dc.style.display = 'block';
+                if (title) title.innerText = 'Кабінет вчителя (Відповіді) 👨‍🏫';
                 renderTeacherAnswers();
             } else {
-                document.getElementById('teacherDashboardContent').style.display = 'none';
-                document.getElementById('loginForm').style.display = 'block';
+                const dc = document.getElementById('teacherDashboardContent');
+                const lf = document.getElementById('loginForm');
+                if (dc) dc.style.display = 'none';
+                if (lf) lf.style.display = 'block';
             }
-        }
-        function closeTeacherModal() { document.getElementById('teacherAuthModal').style.display = 'none'; }
+        };
+        window.closeTeacherModal = function() { const m = document.getElementById('teacherAuthModal'); if(m) m.style.display = 'none'; };
         
-        function handleTeacherLogout() {
-            currentTeacher = null;
+        window.handleTeacherLogout = function() {
+            window.currentTeacher = null;
             localStorage.removeItem('teacherAccount');
             updateTeacherStatusBtn();
             closeTeacherModal();
             alert("Ви вийшли з акаунта вчителя.");
-        }
+        };
 
-        function renderTeacherAnswers() {
+        window.renderTeacherAnswers = function() {
             const container = document.getElementById('teacherAnswersListContainer');
+            if (!container) return;
             container.innerHTML = '';
-            if (testsData.length === 0) { container.innerHTML = '<p style="color: #94a3b8;">Немає тестів.</p>'; return; }
-            testsData.forEach(test => {
+            if (window.testsData.length === 0) { container.innerHTML = '<p style="color: #94a3b8;">Немає тестів.</p>'; return; }
+            window.testsData.forEach(test => {
                 let html = `<div class="teacher-answer-item"><b>[${test.classLevel}] ${test.title}</b><ul style="margin-left: 20px; margin-top: 5px; color: #38bdf8;">`;
                 test.questions.forEach((q, qIdx) => {
                     html += `<li>Питання ${qIdx + 1}: <span style="color: #34d399;">${q.q}</span> → <b>${q.options[q.correct]}</b></li>`;
@@ -796,49 +826,60 @@
                 html += `</ul></div>`;
                 container.innerHTML += html;
             });
-        }
+        };
 
-        function toggleAuthMode(mode) {
+        window.toggleAuthMode = function(mode) {
+            const lf = document.getElementById('loginForm');
+            const rf = document.getElementById('registerForm');
+            const title = document.getElementById('authTitle');
             if (mode === 'register') {
-                document.getElementById('loginForm').style.display = 'none';
-                document.getElementById('registerForm').style.display = 'block';
-                document.getElementById('authTitle').innerText = 'Реєстрація вчителя 📝';
+                if (lf) lf.style.display = 'none';
+                if (rf) rf.style.display = 'block';
+                if (title) title.innerText = 'Реєстрація вчителя 📝';
             } else {
-                document.getElementById('registerForm').style.display = 'none';
-                document.getElementById('loginForm').style.display = 'block';
-                document.getElementById('authTitle').innerText = 'Кабінет вчителя 👨‍🏫';
+                if (rf) rf.style.display = 'none';
+                if (lf) lf.style.display = 'block';
+                if (title) title.innerText = 'Кабінет вчителя 👨‍🏫';
             }
-        }
+        };
 
-        function handleTeacherRegister() {
-            const name = document.getElementById('regName').value.trim();
-            const school = document.getElementById('regSchool').value.trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const pass = document.getElementById('regPass').value.trim();
-            const receipt = document.getElementById('receiptInput').value.trim();
+        window.handleTeacherRegister = function() {
+            const nameEl = document.getElementById('regName');
+            const schoolEl = document.getElementById('regSchool');
+            const emailEl = document.getElementById('regEmail');
+            const passEl = document.getElementById('regPass');
+            const receiptEl = document.getElementById('receiptInput');
+
+            const name = nameEl ? nameEl.value.trim() : '';
+            const school = schoolEl ? schoolEl.value.trim() : '';
+            const email = emailEl ? emailEl.value.trim() : '';
+            const pass = passEl ? passEl.value.trim() : '';
+            const receipt = receiptEl ? receiptEl.value.trim() : '';
 
             if (!name || !email || !pass) { alert("Будь ласка, заповніть усі обов'язкові поля!"); return; }
 
             const newReq = { name, school, email, pass, method: 'card', receipt, approved: false };
-            teacherRequests.push(newReq);
-            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+            window.teacherRequests.push(newReq);
+            localStorage.setItem('teacherRequests', JSON.stringify(window.teacherRequests));
             
-            currentTeacher = newReq;
-            localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+            window.currentTeacher = newReq;
+            localStorage.setItem('teacherAccount', JSON.stringify(window.currentTeacher));
 
             closeTeacherModal();
             updateTeacherStatusBtn();
             updateWelcomeText();
             alert("Заявку надіслано! Адміністратор перевірить дані.");
-        }
+        };
 
-        function handleTeacherLogin() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const pass = document.getElementById('loginPass').value.trim();
-            const found = teacherRequests.find(r => r.email === email && r.pass === pass);
+        window.handleTeacherLogin = function() {
+            const emailEl = document.getElementById('loginEmail');
+            const passEl = document.getElementById('loginPass');
+            const email = emailEl ? emailEl.value.trim() : '';
+            const pass = passEl ? passEl.value.trim() : '';
+            const found = window.teacherRequests.find(r => r.email === email && r.pass === pass);
             if (found) {
-                currentTeacher = found;
-                localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+                window.currentTeacher = found;
+                localStorage.setItem('teacherAccount', JSON.stringify(window.currentTeacher));
                 closeTeacherModal();
                 updateTeacherStatusBtn();
                 updateWelcomeText();
@@ -847,16 +888,17 @@
             } else {
                 alert("Невірний email або пароль!");
             }
-        }
+        };
 
-        function updateTeacherStatusBtn() {
+        window.updateTeacherStatusBtn = function() {
             const btn = document.getElementById('btnTeacherCtrl');
-            if (currentTeacher) {
-                btn.innerText = currentTeacher.approved ? "Контрольні (Вчителі ✅)" : "Контрольні (На перевірці ⏳)";
+            if (!btn) return;
+            if (window.currentTeacher) {
+                btn.innerText = window.currentTeacher.approved ? "Контрольні (Вчителі ✅)" : "Контрольні (На перевірці ⏳)";
             } else {
                 btn.innerText = "Контрольні (Вчителі) 👨‍🏫";
             }
-        }
+        };
 
         // --- БАЗА ПИТАНЬ ---
         const sampleQuestionsPool = [
@@ -874,7 +916,7 @@
             { q: "Який орган людини споживає найбільше кисню у відсотковому співвідношенні до маси?", options: ["Серце", "Мозок", "Печінка", "Легені"], correct: 1, explain: "Головний мозок споживає близько 20% усього кисню організму." }
         ];
 
-        const testsData = [];
+        window.testsData = [];
         const subjectsList = ['Історія України', 'Всесвітня історія', 'Біологія', 'Географія'];
         const classesList = ['5 клас', '6 клас', '7 клас', '8 клас', '9 клас'];
         const authorsList = ['Власов', 'Гісем', 'Остапченко', 'Пестушко', 'Соболь', 'Пометун', 'Бойко', 'Задорожний'];
@@ -885,7 +927,7 @@
                 for (let i = 1; i <= 6; i++) {
                     const authorName = authorsList[(testCounter + i) % authorsList.length];
                     const shuffledQuestions = [...sampleQuestionsPool].sort(() => Math.random() - 0.5);
-                    testsData.push({
+                    window.testsData.push({
                         id: `test_${cls}_${subj}_${i}`,
                         classLevel: cls,
                         category: subj,
@@ -902,7 +944,7 @@
         classesList.forEach(cls => {
             subjectsList.forEach(subj => {
                 const shuffledQuestions = [...sampleQuestionsPool].sort(() => Math.random() - 0.5);
-                testsData.push({
+                window.testsData.push({
                     id: `test_ctrl_${cls}_${subj}`,
                     classLevel: cls,
                     category: 'Контрольні роботи',
@@ -914,47 +956,55 @@
             });
         });
 
-        let currentQuiz = null, currentQuestionIdx = 0, score = 0, currentCategory = 'all', currentClass = 'all';
+        window.currentQuiz = null;
+        window.currentQuestionIdx = 0;
+        window.score = 0;
+        window.currentCategory = 'all';
+        window.currentClass = 'all';
 
-        function filterCategory(cat, btn) {
-            currentCategory = cat;
+        window.filterCategory = function(cat, btn) {
+            window.currentCategory = cat;
             document.querySelectorAll('.categories-nav .filter-btn').forEach(b => b.classList.remove('active'));
             if(btn) btn.classList.add('active');
 
             const backBtn = document.getElementById('backToTestsBtn');
-            if (cat === 'Контрольні роботи') { backBtn.style.display = 'block'; }
-            else { backBtn.style.display = 'none'; }
+            if (cat === 'Контрольні роботи') { if(backBtn) backBtn.style.display = 'block'; }
+            else { if(backBtn) backBtn.style.display = 'none'; }
             renderTests();
-        }
+        };
 
-        function resetToAllTests() {
-            currentCategory = 'all';
-            currentClass = 'all';
+        window.resetToAllTests = function() {
+            window.currentCategory = 'all';
+            window.currentClass = 'all';
             document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.classes-nav .filter-btn')[0].classList.add('active');
-            document.querySelectorAll('.categories-nav .filter-btn')[0].classList.add('active');
-            document.getElementById('backToTestsBtn').style.display = 'none';
+            const classBtns = document.querySelectorAll('.classes-nav .filter-btn');
+            const catBtns = document.querySelectorAll('.categories-nav .filter-btn');
+            if(classBtns[0]) classBtns[0].classList.add('active');
+            if(catBtns[0]) catBtns[0].classList.add('active');
+            const backBtn = document.getElementById('backToTestsBtn');
+            if(backBtn) backBtn.style.display = 'none';
             renderTests();
-        }
+        };
 
-        function filterClass(cls, btn) {
-            currentClass = cls;
+        window.filterClass = function(cls, btn) {
+            window.currentClass = cls;
             document.querySelectorAll('.classes-nav .filter-btn').forEach(b => b.classList.remove('active'));
             if(btn) btn.classList.add('active');
             renderTests();
-        }
+        };
 
-        function renderTests() {
+        window.renderTests = function() {
             const grid = document.getElementById('testsGrid');
+            if (!grid) return;
             const searchInput = document.getElementById('searchInput');
             const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
             grid.innerHTML = '';
 
-            const isTeacherApproved = currentTeacher && currentTeacher.approved;
+            const isTeacherApproved = window.currentTeacher && window.currentTeacher.approved;
 
-            const filtered = testsData.filter(test => {
-                const matchCat = currentCategory === 'all' || test.category === currentCategory;
-                const matchClass = currentClass === 'all' || test.classLevel === currentClass;
+            const filtered = window.testsData.filter(test => {
+                const matchCat = window.currentCategory === 'all' || test.category === window.currentCategory;
+                const matchClass = window.currentClass === 'all' || test.classLevel === window.currentClass;
                 const matchSearch = search === '' || 
                     test.title.toLowerCase().includes(search) || 
                     test.desc.toLowerCase().includes(search) || 
@@ -972,7 +1022,7 @@
 
             filtered.forEach((test) => {
                 let cardClass = 'test-card default';
-                if (currentCategory !== 'all') {
+                if (window.currentCategory !== 'all') {
                     if (test.category === 'Біологія') {
                         cardClass = 'test-card bio';
                     } else if (test.category === 'Географія') {
@@ -1001,35 +1051,45 @@
                 `;
                 grid.appendChild(card);
             });
-        }
+        };
 
-        function startQuiz(testId) {
+        window.startQuiz = function(testId) {
             const now = Date.now();
-            if (now - lastClickTime < 600) return;
-            lastClickTime = now;
+            if (now - window.lastClickTime < 600) return;
+            window.lastClickTime = now;
 
-            quizStartTime = Date.now();
-            currentQuiz = testsData.find(t => t.id === testId);
-            currentQuestionIdx = 0;
-            score = 0;
-            document.getElementById('menuView').style.display = 'none';
-            document.getElementById('resultsView').style.display = 'none';
-            document.getElementById('quizView').style.display = 'block';
-            showQuestion();
-        }
-
-        function showQuestion() {
-            const qData = currentQuiz.questions[currentQuestionIdx];
-            document.getElementById('quizProgress').innerText = `Питання ${currentQuestionIdx + 1} з ${currentQuiz.questions.length}`;
-            document.getElementById('questionText').innerText = qData.q;
+            window.quizStartTime = Date.now();
+            window.currentQuiz = window.testsData.find(t => t.id === testId);
+            window.currentQuestionIdx = 0;
+            window.score = 0;
             
-            document.getElementById('explanationBox').style.display = 'none';
-            document.getElementById('nextBtn').style.display = 'none';
+            const menuView = document.getElementById('menuView');
+            const resultsView = document.getElementById('resultsView');
+            const quizView = document.getElementById('quizView');
+
+            if(menuView) menuView.style.display = 'none';
+            if(resultsView) resultsView.style.display = 'none';
+            if(quizView) quizView.style.display = 'block';
+            showQuestion();
+        };
+
+        window.showQuestion = function() {
+            const qData = window.currentQuiz.questions[window.currentQuestionIdx];
+            const prog = document.getElementById('quizProgress');
+            const qText = document.getElementById('questionText');
+            if(prog) prog.innerText = `Питання ${window.currentQuestionIdx + 1} з ${window.currentQuiz.questions.length}`;
+            if(qText) qText.innerText = qData.q;
+            
+            const expBox = document.getElementById('explanationBox');
+            const nextBtn = document.getElementById('nextBtn');
+            if(expBox) expBox.style.display = 'none';
+            if(nextBtn) nextBtn.style.display = 'none';
 
             const optionsList = document.getElementById('optionsList');
+            if(!optionsList) return;
             optionsList.innerHTML = '';
 
-            const isTeacherApproved = currentTeacher && currentTeacher.approved;
+            const isTeacherApproved = window.currentTeacher && window.currentTeacher.approved;
 
             qData.options.forEach((opt, idx) => {
                 const wrapper = document.createElement('div');
@@ -1049,14 +1109,14 @@
                 wrapper.appendChild(btn);
                 optionsList.appendChild(wrapper);
             });
-        }
+        };
 
-        function selectOption(selectedIdx) {
+        window.selectOption = function(selectedIdx) {
             const now = Date.now();
-            if (now - lastClickTime < 400) return;
-            lastClickTime = now;
+            if (now - window.lastClickTime < 400) return;
+            window.lastClickTime = now;
 
-            const qData = currentQuiz.questions[currentQuestionIdx];
+            const qData = window.currentQuiz.questions[window.currentQuestionIdx];
             const buttons = document.querySelectorAll('.option-btn');
             buttons.forEach(b => b.disabled = true);
 
@@ -1065,73 +1125,86 @@
             const badge = document.getElementById(`feedbackBadge_${selectedIdx}`);
 
             if (selectedIdx === qData.correct) {
-                buttons[selectedIdx].classList.add('correct');
-                badge.innerText = "Добре! ✨";
-                badge.className = "feedback-badge good";
-                badge.style.display = "block";
-
-                statusEl.innerText = "Правильно! 🎉";
-                statusEl.style.color = "#10b981";
-                score++;
+                if(buttons[selectedIdx]) buttons[selectedIdx].classList.add('correct');
+                if(badge) {
+                    badge.innerText = "Добре! ✨";
+                    badge.className = "feedback-badge good";
+                    badge.style.display = "block";
+                }
+                if(statusEl) {
+                    statusEl.innerText = "Правильно! 🎉";
+                    statusEl.style.color = "#10b981";
+                }
+                window.score++;
             } else {
-                buttons[selectedIdx].classList.add('wrong');
-                buttons[qData.correct].classList.add('correct');
+                if(buttons[selectedIdx]) buttons[selectedIdx].classList.add('wrong');
+                if(buttons[qData.correct]) buttons[qData.correct].classList.add('correct');
                 
-                badge.innerText = "Не спиши! ❌";
-                badge.className = "feedback-badge bad";
-                badge.style.display = "block";
-
-                statusEl.innerText = "Неправильно ❌";
-                statusEl.style.color = "#ef4444";
+                if(badge) {
+                    badge.innerText = "Не спиши! ❌";
+                    badge.className = "feedback-badge bad";
+                    badge.style.display = "block";
+                }
+                if(statusEl) {
+                    statusEl.innerText = "Неправильно ❌";
+                    statusEl.style.color = "#ef4444";
+                }
             }
 
-            explainTextEl.innerText = qData.explain;
-            document.getElementById('explanationBox').style.display = 'block';
-            document.getElementById('nextBtn').style.display = 'block';
-        }
+            if(explainTextEl) explainTextEl.innerText = qData.explain;
+            const expBox = document.getElementById('explanationBox');
+            const nextBtn = document.getElementById('nextBtn');
+            if(expBox) expBox.style.display = 'block';
+            if(nextBtn) nextBtn.style.display = 'block';
+        };
 
-        function nextQuestion() {
-            currentQuestionIdx++;
-            if (currentQuestionIdx < currentQuiz.questions.length) {
+        window.nextQuestion = function() {
+            window.currentQuestionIdx++;
+            if (window.currentQuestionIdx < window.currentQuiz.questions.length) {
                 showQuestion();
             } else {
                 showResults();
             }
-        }
+        };
 
-        function showResults() {
-            const timeElapsedSec = (Date.now() - quizStartTime) / 1000;
+        window.showResults = function() {
+            const timeElapsedSec = (Date.now() - window.quizStartTime) / 1000;
             const timeElapsedHours = parseFloat((timeElapsedSec / 3600).toFixed(3));
 
-            document.getElementById('quizView').style.display = 'none';
-            document.getElementById('resultsView').style.display = 'block';
+            const quizView = document.getElementById('quizView');
+            const resultsView = document.getElementById('resultsView');
+            if(quizView) quizView.style.display = 'none';
+            if(resultsView) resultsView.style.display = 'block';
             
-            const total = currentQuiz.questions.length;
-            const percent = (score / total) * 100;
+            const total = window.currentQuiz.questions.length;
+            const percent = (window.score / total) * 100;
 
-            let topUserIndex = studentsScores.findIndex(s => s.name === verifiedStatus);
+            let topUserIndex = window.studentsScores.findIndex(s => s.name === window.verifiedStatus);
             if (topUserIndex !== -1) {
-                studentsScores[topUserIndex].testsDone += 1;
-                studentsScores[topUserIndex].correctAnswers += score;
-                studentsScores[topUserIndex].hoursSpent = parseFloat((studentsScores[topUserIndex].hoursSpent + timeElapsedHours).toFixed(2));
+                window.studentsScores[topUserIndex].testsDone += 1;
+                window.studentsScores[topUserIndex].correctAnswers += window.score;
+                window.studentsScores[topUserIndex].hoursSpent = parseFloat((window.studentsScores[topUserIndex].hoursSpent + timeElapsedHours).toFixed(2));
             } else {
-                studentsScores.unshift({
-                    name: verifiedStatus || "Активний учень",
+                window.studentsScores.unshift({
+                    name: window.verifiedStatus || "Активний учень",
                     testsDone: 1,
-                    correctAnswers: score,
+                    correctAnswers: window.score,
                     hoursSpent: Math.max(0.1, timeElapsedHours)
                 });
             }
-            localStorage.setItem('studentsScores', JSON.stringify(studentsScores));
+            localStorage.setItem('studentsScores', JSON.stringify(window.studentsScores));
 
-            document.getElementById('scoreText').innerText = `Результат: ${score} з ${total}`;
-            document.getElementById('feedbackText').innerText = score === total 
+            const scoreText = document.getElementById('scoreText');
+            const feedbackText = document.getElementById('feedbackText');
+            if(scoreText) scoreText.innerText = `Результат: ${window.score} з ${total}`;
+            if(feedbackText) feedbackText.innerText = window.score === total 
                 ? `Супер! Чудовий результат, ти знаєш усе на максимум! 🔥` 
                 : `Непогано! Ознайомся з поясненнями та спробуй ще раз! 👍`;
 
             const visualContainer = document.getElementById('resultVisualContainer');
+            if (!visualContainer) return;
             visualContainer.innerHTML = '';
-            const subject = currentQuiz.category;
+            const subject = window.currentQuiz.category;
 
             if (subject === 'Біологія') {
                 visualContainer.innerHTML = `
@@ -1169,16 +1242,20 @@
             } else {
                 visualContainer.innerHTML = `<div style="font-size: 50px;">🏆</div>`;
             }
-        }
+        };
 
-        function showMenu() {
-            document.getElementById('quizView').style.display = 'none';
-            document.getElementById('resultsView').style.display = 'none';
-            document.getElementById('menuView').style.display = 'grid';
+        window.showMenu = function() {
+            const quizView = document.getElementById('quizView');
+            const resultsView = document.getElementById('resultsView');
+            const menuView = document.getElementById('menuView');
+            if(quizView) quizView.style.display = 'none';
+            if(resultsView) resultsView.style.display = 'none';
+            if(menuView) menuView.style.display = 'grid';
             renderTests();
             renderTopStudents();
-        }
+        };
     </script>
 </body>
 </html>
-```[cite: 3]
+
+```
