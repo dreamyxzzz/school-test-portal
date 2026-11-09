@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шкільний Тест-Портал (5-9 класи)</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { 
+            background: linear-gradient(135deg, #04060f 0%, #0a1124 40%, #131135 100%);
+            color: #f8fafc; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before, body::after {
+            content: '';
+            position: absolute;
+            width: 650px; height: 650px;
+            border-radius: 50%; filter: blur(150px);
+            z-index: -1; opacity: 0.16;
+            animation: pulseGlow 14s ease-in-out infinite alternate;
+        }
+        body::before { background: #0284c7; top: -150px; left: -150px; }
+        body::after { background: #7c3aed; bottom: -150px; right: -150px; }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); opacity: 0.12; }
+            100% { transform: scale(1.18); opacity: 0.22; }
+        }
+        
+        header { 
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 35px 20px; 
+            text-align: center; 
+            border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+            position: relative;
+        }
+        header h1 { color: #38bdf8; font-size: 34px; margin-bottom: 8px; text-shadow: 0 0 30px rgba(56, 189, 248, 0.7); }
+        header p { color: #94a3b8; font-size: 14px; }
+        
+        .header-buttons-right {
+            position: absolute; right: 25px; top: 28px;
+            display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+        }
+
+        .header-btn {
+            background: rgba(99, 102, 241, 0.25); color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.5);
+            padding: 10px 15px; border-radius: 14px;
+            cursor: pointer; font-size: 12px; font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 18px rgba(99,102,241,0.3);
+        }
+        .header-btn:hover { background: #6366f1; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 22px rgba(99,102,241,0.5); }
+        
+        .header-btn-logout {
+            background: rgba(239, 68, 68, 0.25); color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            box-shadow: 0 4px 18px rgba(239,68,68,0.3);
+        }
+        .header-btn-logout:hover { background: #ef4444; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 22px rgba(239,68,68,0.5); }
+
+        .header-btn-student {
+            background: rgba(16, 185, 129, 0.25); color: #34d399;
+            border-color: rgba(16, 185, 129, 0.5);
+            box-shadow: 0 4px 18px rgba(16,185,129,0.3);
+        }
+        .header-btn-student:hover { background: #10b981; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 22px rgba(16,185,129,0.5); }
+
+        .admin-btn-header {
+            position: absolute; left: 25px; top: 28px;
+            background: rgba(56, 189, 248, 0.25); color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.5);
+            padding: 11px 18px; border-radius: 14px;
+            cursor: pointer; font-size: 13px; font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 18px rgba(56,189,248,0.3);
+        }
+        .admin-btn-header:hover { background: #0284c7; color: #fff; transform: translateY(-3px); box-shadow: 0 6px 22px rgba(56,189,248,0.5); }
+
+        .container { max-width: 1250px; width: 94%; margin: 40px auto; flex: 1; }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 25px;
+            align-items: start;
+        }
+
+        @media(max-width: 1000px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .header-buttons-right { position: static; justify-content: center; margin-top: 15px; }
+            .admin-btn-header { position: static; display: block; margin: 0 auto 10px auto; }
+        }
+
+        .top-students-sidebar {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            height: 700px;
+        }
+        .top-students-sidebar h3 {
+            color: #38bdf8;
+            font-size: 18px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .top-list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        .top-student-card {
+            background: rgba(15, 23, 42, 0.85);
+            padding: 12px;
+            border-radius: 14px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 12px;
+        }
+        .top-student-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #f1f5f9;
+        }
+        
+        .stat-bar-group { margin-bottom: 6px; }
+        .stat-bar-label {
+            display: flex; justify-content: space-between;
+            font-size: 11px; color: #94a3b8; margin-bottom: 2px;
+        }
+        .progress-bar-bg {
+            width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px; overflow: hidden;
+        }
+        .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+        .fill-tests { background: linear-gradient(90deg, #38bdf8, #0284c7); }
+        .fill-answers { background: linear-gradient(90deg, #10b981, #059669); }
+        .fill-time { background: linear-gradient(90deg, #f59e0b, #d97706); }
+
+        .filter-section { 
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 24px; border-radius: 24px;
+            display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+        .filter-label { font-size: 14px; color: #38bdf8; font-weight: 600; letter-spacing: 0.5px; }
+        .classes-nav, .categories-nav { display: flex; gap: 10px; flex-wrap: wrap; }
+        
+        .filter-btn {
+            background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px); color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.12); padding: 11px 18px; border-radius: 14px;
+            cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s ease;
+        }
+        .filter-btn:hover { border-color: #38bdf8; color: #fff; transform: translateY(-2px); }
+        .filter-btn.active {
+            background: linear-gradient(135deg, #0284c7, #2563eb); color: #fff;
+            border-color: transparent; box-shadow: 0 4px 18px rgba(2, 132, 199, 0.5);
+        }
+
+        .back-to-tests-btn {
+            display: none; background: rgba(245, 158, 11, 0.25); color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.5); padding: 12px 20px; border-radius: 14px;
+            cursor: pointer; font-weight: bold; font-size: 14px; margin-bottom: 25px;
+            transition: all 0.3s; box-shadow: 0 4px 18px rgba(245,158,11,0.3);
+        }
+        .back-to-tests-btn:hover { background: #f59e0b; color: #0f172a; transform: translateY(-2px); }
+
+        .search-box input { 
+            width: 100%; padding: 18px 24px; border-radius: 18px; 
+            border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(30, 41, 59, 0.8);
+            color: #fff; font-size: 16px; margin-bottom: 25px; outline: none;
+            transition: all 0.3s ease; box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+        }
+        .search-box input:focus { border-color: #38bdf8; box-shadow: 0 0 30px rgba(56, 189, 248, 0.5); }
+        
+        .tests-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+        
+        .test-card { 
+            backdrop-filter: blur(18px); border-radius: 24px; 
+            padding: 28px; border: 1px solid rgba(255, 255, 255, 0.12); 
+            display: flex; flex-direction: column; gap: 14px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 14px 40px rgba(0,0,0,0.4); position: relative; overflow: hidden;
+        }
+        
+        .test-card.default { background: rgba(30, 41, 59, 0.85); }
+        .test-card.bio { background: linear-gradient(135deg, rgba(6, 95, 70, 0.95), rgba(4, 120, 87, 0.85)); border-color: rgba(52, 211, 153, 0.5); }
+        .test-card.geo { background: linear-gradient(135deg, rgba(14, 116, 144, 0.95), rgba(3, 105, 161, 0.85)); border-color: rgba(56, 189, 248, 0.5); }
+        .test-card.history { background: linear-gradient(135deg, rgba(180, 130, 70, 0.85), rgba(146, 90, 30, 0.85)); border-color: rgba(251, 191, 36, 0.5); }
+
+        .test-card:hover { transform: translateY(-10px); box-shadow: 0 22px 50px rgba(0,0,0,0.6); }
+        
+        .badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .badge { background: rgba(0, 0, 0, 0.25); color: #fff; border: 1px solid rgba(255, 255, 255, 0.3); font-size: 11px; font-weight: bold; padding: 6px 14px; border-radius: 20px; text-transform: uppercase; }
+        .badge-class { background: rgba(0, 0, 0, 0.3); color: #fff; }
+        .badge-author { background: rgba(0, 0, 0, 0.3); color: #fff; }
+        
+        .test-card h3 { font-size: 18px; color: #ffffff; line-height: 1.4; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .test-card p { color: #f1f5f9; font-size: 13px; line-height: 1.5; flex: 1; }
+        .meta-info { font-size: 12px; color: #f8fafc; display: flex; justify-content: space-between; border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 14px; margin-top: 6px; font-weight: 500; }
+
+        .start-btn { 
+            background: #ffffff; color: #0f172a; border: none; padding: 15px; border-radius: 16px; 
+            font-weight: bold; cursor: pointer; width: 100%; font-size: 15px; transition: all 0.25s ease;
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
+        }
+        .start-btn:hover { filter: brightness(1.1); transform: scale(1.02); }
+
+        .bypass-btn {
+            background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; 
+            padding: 12px; border-radius: 16px; font-weight: bold; cursor: pointer; width: 100%; 
+            font-size: 14px; margin-top: 10px; transition: all 0.25s ease;
+            box-shadow: 0 6px 22px rgba(16, 185, 129, 0.4);
+        }
+        .bypass-btn:hover { filter: brightness(1.15); transform: scale(1.02); }
+
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(4, 6, 16, 0.92); backdrop-filter: blur(16px);
+            justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal-box {
+            background: rgba(30, 41, 59, 0.96); padding: 35px; border-radius: 28px;
+            border: 1px solid rgba(56, 189, 248, 0.5); width: 90%; max-width: 600px;
+            text-align: center; box-shadow: 0 30px 70px rgba(0,0,0,0.7); max-height: 90vh; overflow-y: auto;
+            position: relative;
+        }
+        .modal-box h3 { color: #38bdf8; margin-bottom: 15px; font-size: 24px; text-shadow: 0 0 20px rgba(56,189,248,0.5); }
+        .modal-box input, .modal-box select {
+            width: 100%; padding: 14px; border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.2); background: rgba(15, 23, 42, 0.9);
+            color: #fff; font-size: 15px; margin-bottom: 14px; outline: none; text-align: left;
+            transition: all 0.3s;
+        }
+        .modal-box input:focus { border-color: #38bdf8; box-shadow: 0 0 20px rgba(56,189,248,0.4); }
+        
+        .verify-box-grid {
+            display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; text-align: left;
+        }
+        .verify-card {
+            background: rgba(15, 23, 42, 0.85); border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px; padding: 15px; cursor: pointer; transition: all 0.3s;
+        }
+        .verify-card:hover { border-color: rgba(56, 189, 248, 0.6); transform: translateY(-2px); }
+        .verify-card.active { border-color: #10b981; background: rgba(16, 185, 129, 0.15); box-shadow: 0 0 20px rgba(16,185,129,0.3); }
+        .verify-card h4 { color: #38bdf8; font-size: 14px; margin-bottom: 4px; }
+        .verify-card p { color: #94a3b8; font-size: 11px; line-height: 1.3; }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.9); padding: 16px; border-radius: 16px;
+            border: 1px solid rgba(56, 189, 248, 0.4); margin-bottom: 14px; text-align: left;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+        }
+        .teacher-request-item {
+            background: rgba(15, 23, 42, 0.9); padding: 16px; border-radius: 14px;
+            margin-bottom: 12px; text-align: left; border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .teacher-answers-box {
+            background: rgba(15, 23, 42, 0.95); padding: 18px; border-radius: 16px;
+            border: 1px solid rgba(16, 185, 129, 0.4); margin-bottom: 20px; text-align: left;
+            max-height: 300px; overflow-y: auto;
+        }
+        .teacher-answer-item {
+            background: rgba(30, 41, 59, 0.75); padding: 12px 16px; border-radius: 12px;
+            margin-bottom: 10px; font-size: 13px; border-left: 3px solid #10b981;
+        }
+
+        .quiz-box, .results-box { 
+            display: none; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(20px);
+            padding: 40px; border-radius: 28px; border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 30px 70px rgba(0,0,0,0.7);
+        }
+        .quiz-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .back-btn { background: rgba(51, 65, 85, 0.85); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.15); padding: 10px 18px; border-radius: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+        .back-btn:hover { background: #475569; border-color: #38bdf8; }
+        .progress { font-size: 14px; color: #38bdf8; font-weight: bold; background: rgba(56, 189, 248, 0.15); padding: 8px 16px; border-radius: 20px; border: 1px solid rgba(56,189,248,0.3); }
+        .question-text { font-size: 22px; margin-bottom: 25px; font-weight: 600; color: #f8fafc; line-height: 1.4; }
+        .options-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 22px; }
+        
+        .option-wrapper { display: flex; align-items: center; gap: 12px; }
+        .option-btn { 
+            flex: 1; background: rgba(51, 65, 85, 0.75); color: #fff; border: 1px solid rgba(255, 255, 255, 0.12); 
+            padding: 16px 20px; border-radius: 16px; text-align: left; font-size: 16px; cursor: pointer; transition: all 0.25s; 
+        }
+        .option-btn:hover:not(:disabled) { background: rgba(71, 85, 105, 0.9); border-color: #38bdf8; transform: translateX(5px); }
+        .option-btn.correct { background: rgba(6, 95, 70, 0.9) !important; border-color: #10b981 !important; color: #ecfdf5 !important; }
+        .option-btn.wrong { background: rgba(153, 27, 27, 0.9) !important; border-color: #ef4444 !important; color: #fef2f2 !important; }
+
+        .feedback-badge {
+            font-weight: bold; font-size: 14px; padding: 8px 14px; border-radius: 12px;
+            white-space: nowrap; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; display: none;
+        }
+        .feedback-badge.good { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+        .feedback-badge.bad { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .explanation-box { display: none; background: rgba(15, 23, 42, 0.96); padding: 20px; border-radius: 16px; border-left: 4px solid #38bdf8; margin-bottom: 24px; font-size: 14px; color: #cbd5e1; border: 1px solid rgba(255,255,255,0.06); }
+        .next-btn { display: none; width: 100%; background: linear-gradient(135deg, #38bdf8, #0284c7); color: #0f172a; border: none; padding: 16px; border-radius: 16px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 6px 22px rgba(56,189,248,0.4); }
+        
+        .results-box { text-align: center; }
+        .score-text { font-size: 28px; margin: 15px 0; font-weight: bold; color: #10b981; text-shadow: 0 0 18px rgba(16,185,129,0.35); }
+
+        .result-visual-container { display: flex; justify-content: center; align-items: center; margin: 25px 0; min-height: 150px; }
+
+        .flask-wrapper {
+            position: relative; width: 70px; height: 110px; border: 3px solid #38bdf8;
+            border-top: none; border-radius: 0 0 25px 25px; background: rgba(15,23,42,0.8);
+            overflow: hidden; box-shadow: 0 0 20px rgba(56,189,248,0.3);
+        }
+        .flask-neck {
+            position: absolute; top: -20px; left: 22px; width: 26px; height: 20px;
+            border: 3px solid #38bdf8; border-bottom: none; background: rgba(15,23,42,0.8);
+        }
+        .flask-liquid {
+            position: absolute; bottom: 0; left: 0; width: 100%; background: #10b981;
+            transition: height 1s ease-in-out; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .globe-container {
+            width: 100px; height: 100px; border-radius: 50%; border: 3px solid #38bdf8;
+            background: radial-gradient(circle at 30% 30%, #38bdf8, #0284c7, #0f172a);
+            box-shadow: 0 0 25px rgba(56,189,248,0.5); animation: rotateGlobe 6s linear infinite;
+            display: flex; justify-content: center; align-items: center; font-size: 32px;
+        }
+        @keyframes rotateGlobe {
+            0% { filter: hue-rotate(0deg); transform: rotate(0deg); }
+            100% { filter: hue-rotate(360deg); transform: rotate(360deg); }
+        }
+
+        .history-artifacts-box {
+            display: flex; gap: 15px; justify-content: center; align-items: center; font-size: 28px;
+            animation: floatArtifacts 3s ease-in-out infinite alternate;
+        }
+        @keyframes floatArtifacts {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-8px); }
+        }
+
+        footer { text-align: center; padding: 30px; color: #64748b; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <!-- ВЕРИФІКАЦІЯ -->
+    <div class="modal-overlay" id="verifyModal" style="display: flex;">
+        <div class="modal-box" style="max-width: 520px;">
+            <h3>🛡️ Верифікація користувача</h3>
+            <p style="color: #cbd5e1; font-size: 13px; margin-bottom: 20px; line-height: 1.5;">
+                Оберіть свій навчальний статус або підтвердіть вхід, натиснувши на відповідну картку нижче:
+            </p>
+            
+            <div class="verify-box-grid">
+                <div class="verify-card" id="cardOption1" onclick="selectVerifyOption(1)">
+                    <h4>🎒 Учень (5-9 класи)</h4>
+                    <p>Проходження шкільних тестів та тренування.</p>
+                </div>
+                <div class="verify-card" id="cardOption2" onclick="selectVerifyOption(2)">
+                    <h4>👨‍🏫 Вчитель / Репетитор</h4>
+                    <p>Доступ до відповідей та контрольних робіт.</p>
+                </div>
+                <div class="verify-card" id="cardOption3" onclick="selectVerifyOption(3)">
+                    <h4>🚀 Гість / Самоосвіта</h4>
+                    <p>Перегляд матеріалів та перевірка знань.</p>
+                </div>
+            </div>
+
+            <button class="start-btn" id="verifyProceedBtn" onclick="completeVerification()" style="opacity: 0.5; pointer-events: none;">Продовжити роботу →</button>
+            
+            <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                <input type="password" id="passWithoutNameInput" placeholder="Введи секретний пароль..." style="margin-bottom: 8px;">
+                <button class="bypass-btn" onclick="bypassWithoutName()">⚡ Швидкий вхід за паролем</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- КАБІНЕТ АДМІНА -->
+    <div class="modal-overlay" id="adminModal">
+        <div class="modal-box">
+            <h3>🔒 Особистий кабінет Адміна</h3>
+            <p style="color: #94a3b8; font-size: 13px; margin-bottom: 16px;">Введіть секретний пароль адміністратора</p>
+            <input type="password" id="adminPassInput" placeholder="Пароль...">
+            <button class="start-btn" onclick="checkAdminPass()">Увійти в кабінет</button>
+            <button class="back-btn" style="width: 100%; margin-top: 10px;" onclick="closeAdminModal()">Закрити</button>
+        </div>
+    </div>
+
+    <!-- ПАНЕЛЬ АДМІНА -->
+    <div class="modal-overlay" id="adminDashboardModal">
+        <div class="modal-box" style="max-width: 680px;">
+            <h3>🛠️ Панель управління (Кабінет Тимура)</h3>
+            <div class="stat-card">
+                <h4 style="color: #38bdf8; margin-bottom: 8px;">📊 Статистика відвідувачів та фінансів:</h4>
+                <p>Загальна кількість візитів: <b id="statTotalVisits" style="color: #10b981;">0</b></p>
+                <p>Загальна сума зібраних коштів: <b id="statTotalMoney" style="color: #34d399;">0 грн</b></p>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                <button class="start-btn" style="background: linear-gradient(135deg, #10b981, #059669); font-size: 14px; padding: 12px; flex: 1;" onclick="adminBypassTeacherLogin()">⚡ Увійти як Головний Вчитель 🔓</button>
+            </div>
+
+            <p style="color: #38bdf8; font-size: 13px; margin-bottom: 10px; text-align: left;">Заявки вчителів:</p>
+            <div id="adminRequestsList" style="max-height: 180px; overflow-y: auto; margin-bottom: 15px;"></div>
+            <button class="back-btn" style="width: 100%;" onclick="closeAdminDashboard()">Вийти</button>
+        </div>
+    </div>
+
+    <!-- ВХІД ВЧИТЕЛЯ ТА ВІДПОВІДІ -->
+    <div class="modal-overlay" id="teacherAuthModal">
+        <div class="modal-box" style="max-width: 650px;">
+            <h3 id="authTitle">Кабінет вчителя 👨‍🏫</h3>
+            
+            <div id="teacherDashboardContent" style="display: none;">
+                <div class="stat-card">
+                    <h4 style="color: #34d399; margin-bottom: 6px;">✅ Статус: Підтверджений вчитель</h4>
+                    <p style="font-size: 13px; color: #cbd5e1;">Вам доступні відповіді на всі тести та контрольні роботи порталу.</p>
+                </div>
+                
+                <h4 style="color: #38bdf8; font-size: 15px; margin-bottom: 10px; text-align: left;">📚 Повні відповіді та ключі на всі тести:</h4>
+                <div class="teacher-answers-box" id="teacherAnswersListContainer"></div>
+                
+                <button class="back-btn" style="width: 100%; margin-top: 10px;" onclick="handleTeacherLogout()">Вийти з акаунта 🚪</button>
+                <button class="back-btn" style="width: 100%; margin-top: 8px;" onclick="closeTeacherModal()">Закрити</button>
+            </div>
+
+            <div id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email...">
+                <input type="password" id="loginPass" placeholder="Пароль...">
+                <button class="start-btn" onclick="handleTeacherLogin()">Увійти</button>
+                <p style="margin-top: 15px; font-size: 13px; color: #94a3b8;">Немає акаунту? <a href="#" onclick="toggleAuthMode('register')" style="color: #38bdf8;">Зареєструватися</a></p>
+                <button class="back-btn" style="width: 100%; margin-top: 12px;" onclick="closeTeacherModal()">Скасувати</button>
+            </div>
+
+            <div id="registerForm" style="display: none;">
+                <input type="text" id="regName" placeholder="ПІБ вчителя...">
+                <input type="text" id="regSchool" placeholder="Школа / Навчальний заклад...">
+                <input type="email" id="regEmail" placeholder="Email...">
+                <input type="password" id="regPass" placeholder="Пароль...">
+                
+                <div class="filter-label" style="text-align: left; margin-bottom: 8px;">Оберіть зручний метод підтвердження:</div>
+                <div class="verification-options-grid" style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px;">
+                    <div class="verify-card active" id="cardOptionCard" onclick="selectVerificationMethod('card')">
+                        <h4 style="color: #34d399;">💳 Оплата 25 грн (Рекомендовано)</h4>
+                        <p>Швидко, просто та без зайвих бюрократичних клопотів.</p>
+                    </div>
+                </div>
+
+                <div style="background: rgba(15,23,42,0.9); padding: 14px; border-radius: 10px; margin-bottom: 14px; text-align: left; font-size: 13px; color: #cbd5e1;">
+                    <p style="color: #38bdf8; font-weight: bold; margin-bottom: 6px;">Реквізити для оплати 25 грн (на пів року):</p>
+                    <p style="font-family: monospace; font-size: 14px; margin-bottom: 8px;">💳 5168 7520 2674 1291</p>
+                    <input type="text" id="receiptInput" placeholder="Номер квитанції або коментар..." style="margin-bottom: 0;">
+                </div>
+
+                <button class="start-btn" onclick="handleTeacherRegister()">Надіслати заявку 🚀</button>
+                <p style="margin-top: 15px; font-size: 13px; color: #94a3b8;">Вже є акаунт? <a href="#" onclick="toggleAuthMode('login')" style="color: #38bdf8;">Увійти</a></p>
+                <button class="back-btn" style="width: 100%; margin-top: 12px;" onclick="closeTeacherModal()">Скасувати</button>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <button class="admin-btn-header" onclick="openAdminModal()">🔑 Кабінет Адміна</button>
+
+        <h1>📚 Шкільний Портал (5-9 класи)</h1>
+        <p id="welcomeUserText">Інтерактивні тести за підручниками різних авторів</p>
+        
+        <div class="header-buttons-right">
+            <button class="header-btn" onclick="filterCategory('all', null)">Усі тести 📖</button>
+            <button class="header-btn header-btn-student" id="btnStudentCtrl" onclick="filterCategory('Контрольні роботи', document.querySelector('.categories-nav .filter-btn'))">Контрольні (Учні) 📝</button>
+            <button class="header-btn" id="btnTeacherCtrl" onclick="openTeacherAuthModal()">Контрольні (Вчителі) 👨‍🏫</button>
+            <button class="header-btn header-btn-logout" onclick="logoutUser()">Вийти з акаунта 🚪</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="main-layout" id="menuView">
+            <div>
+                <button class="back-to-tests-btn" id="backToTestsBtn" onclick="resetToAllTests()">← Повернутися до всіх тестів</button>
+
+                <div class="filter-section">
+                    <div class="filter-label">Виберіть клас:</div>
+                    <div class="classes-nav">
+                        <button class="filter-btn active" onclick="filterClass('all', this)">Усі класи</button>
+                        <button class="filter-btn" onclick="filterClass('5 клас', this)">5 клас</button>
+                        <button class="filter-btn" onclick="filterClass('6 клас', this)">6 клас</button>
+                        <button class="filter-btn" onclick="filterClass('7 клас', this)">7 клас</button>
+                        <button class="filter-btn" onclick="filterClass('8 клас', this)">8 клас</button>
+                        <button class="filter-btn" onclick="filterClass('9 клас', this)">9 клас</button>
+                    </div>
+
+                    <div class="filter-label" style="margin-top: 10px;">Предмет:</div>
+                    <div class="categories-nav">
+                        <button class="filter-btn active" onclick="filterCategory('all', this)">Усі предмети</button>
+                        <button class="filter-btn" onclick="filterCategory('Історія України', this)">Історія України</button>
+                        <button class="filter-btn" onclick="filterCategory('Всесвітня історія', this)">Всесвітня історія</button>
+                        <button class="filter-btn" onclick="filterCategory('Біологія', this)">Біологія</button>
+                        <button class="filter-btn" onclick="filterCategory('Географія', this)">Географія</button>
+                    </div>
+                </div>
+
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Пошук за автором або темою..." oninput="renderTests()">
+                </div>
+                <div class="tests-grid" id="testsGrid"></div>
+            </div>
+
+            <!-- ТОП УЧНІВ НА 1000 МІСЦЬ -->
+            <div class="top-students-sidebar">
+                <h3>🏆 Топ учнів порталу (1000 місць)</h3>
+                <div class="top-list-container" id="topStudentsList"></div>
+            </div>
+        </div>
+
+        <!-- ТЕСТОВИЙ БЛОК -->
+        <div id="quizView" class="quiz-box">
+            <div class="quiz-header">
+                <button class="back-btn" onclick="showMenu()">← До меню</button>
+                <div class="progress" id="quizProgress">1 з 12</div>
+            </div>
+            <div class="question-text" id="questionText">Питання...</div>
+            <div class="options-list" id="optionsList"></div>
+            
+            <div id="explanationBox" class="explanation-box">
+                <div class="explanation-title" id="explanationStatus">Пояснення:</div>
+                <div id="explanationText"></div>
+            </div>
+
+            <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Наступне питання →</button>
+        </div>
+
+        <!-- РЕЗУЛЬТАТ -->
+        <div id="resultsView" class="results-box">
+            <h2>Тест завершено! 🎉</h2>
+            <div class="result-visual-container" id="resultVisualContainer"></div>
+            <div class="score-text" id="scoreText">Результат: 0 з 12</div>
+            <p id="feedbackText" style="color: #94a3b8; margin-bottom: 25px;"></p>
+            <button class="start-btn" onclick="showMenu()">Повернутися в меню</button>
+        </div>
+    </div>
+
+    <footer><p>© 2026 Навчальний портал. Офіційна освітня платформа.</p></footer>
+
+    <script>
+        (function securityCheck() {
+            const langCheck = navigator.language || navigator.userLanguage || '';
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+            if (langCheck.toLowerCase().includes('ru-ru') || timeZone.includes('Moscow') || timeZone.includes('Europe/Moscow')) {
+                document.body.innerHTML = '<div style="background:#050814;color:#ef4444;height:100vh;display:flex;justify-content:center;align-items:center;font-size:24px;text-align:center;padding:20px;">Помилка безпеки: Доступ з вашого регіону обмежено системою захисту сайту 🛡️</div>';
+                throw new Error('Access blocked by security system.');
+            }
+        })();
+
+        let lastClickTime = 0;
+        let quizStartTime = 0;
+
+        // Повністю видалено будь-яку перевірку або читання VIP зі сховища
+        let verifiedStatus = localStorage.getItem('schoolPortalVerified') || '';
+        let currentTeacher = JSON.parse(localStorage.getItem('teacherAccount') || 'null');
+        let teacherRequests = JSON.parse(localStorage.getItem('teacherRequests') || '[]');
+        let totalVisits = parseInt(localStorage.getItem('totalVisitsCounter') || '0') + 1;
+        
+        let studentsScores = JSON.parse(localStorage.getItem('studentsScores') || 'null');
+        if (!studentsScores) {
+            studentsScores = [];
+            const sampleNames = ["Максим", "Софія", "Артем", "Оля", "Нікіта", "Матвей", "Віка", "Данило", "Катя", "Тимур", "Дмитро", "Аліна", "Єгор", "Злата", "Іван"];
+            for (let i = 1; i <= 1000; i++) {
+                const randomName = sampleNames[i % sampleNames.length] + (i > 15 ? ' ' + i : '');
+                studentsScores.push({
+                    name: randomName,
+                    testsDone: Math.floor(Math.random() * 45) + 1,
+                    correctAnswers: Math.floor(Math.random() * 400) + 10,
+                    hoursSpent: parseFloat((Math.random() * 15 + 0.5).toFixed(1))
+                });
+            }
+            localStorage.setItem('studentsScores', JSON.stringify(studentsScores));
+        }
+
+        localStorage.setItem('totalVisitsCounter', totalVisits.toString());
+
+        let selectedOptionId = null;
+
+        function selectVerifyOption(id) {
+            document.querySelectorAll('.verify-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`cardOption${id}`).classList.add('active');
+            selectedOptionId = id;
+            const btn = document.getElementById('verifyProceedBtn');
+            btn.style.opacity = '1';
+            btn.style.pointerEvents = 'auto';
+        }
+
+        function completeVerification() {
+            if (!selectedOptionId) return;
+            const statuses = { 1: "Учень", 2: "Вчитель", 3: "Гість" };
+            verifiedStatus = statuses[selectedOptionId];
+            localStorage.setItem('schoolPortalVerified', verifiedStatus);
+            document.getElementById('verifyModal').style.display = 'none';
+            updateWelcomeText();
+        }
+
+        function bypassWithoutName() {
+            const passInput = document.getElementById('passWithoutNameInput').value;
+            if (passInput === 'timur12345') {
+                verifiedStatus = "Тимур (Адмін)";
+                localStorage.setItem('schoolPortalVerified', verifiedStatus);
+                document.getElementById('verifyModal').style.display = 'none';
+                updateWelcomeText();
+                renderTests();
+            } else {
+                alert("Невірний пароль!");
+            }
+        }
+
+        window.onload = function() {
+            if (verifiedStatus) {
+                document.getElementById('verifyModal').style.display = 'none';
+                updateWelcomeText();
+            } else {
+                document.getElementById('verifyModal').style.display = 'flex';
+            }
+
+            renderTests();
+            renderTopStudents();
+            updateTeacherStatusBtn();
+        }
+
+        function logoutUser() {
+            localStorage.removeItem('schoolPortalVerified');
+            localStorage.removeItem('teacherAccount');
+            verifiedStatus = '';
+            currentTeacher = null;
+            document.getElementById('verifyModal').style.display = 'flex';
+            updateTeacherStatusBtn();
+        }
+
+        function renderTopStudents() {
+            const container = document.getElementById('topStudentsList');
+            container.innerHTML = '';
+            studentsScores.sort((a, b) => b.correctAnswers - a.correctAnswers);
+            
+            const maxTests = 50, maxAnswers = 500, maxHours = 20;
+
+            studentsScores.forEach((st, idx) => {
+                const rank = idx + 1;
+                let medal = `#${rank}`;
+                if (rank === 1) medal = '🥇';
+                else if (rank === 2) medal = '🥈';
+                else if (rank === 3) medal = '🥉';
+
+                const testPercent = Math.min(100, (st.testsDone / maxTests) * 100);
+                const answerPercent = Math.min(100, (st.correctAnswers / maxAnswers) * 100);
+                const timePercent = Math.min(100, (st.hoursSpent / maxHours) * 100);
+
+                const card = document.createElement('div');
+                card.className = 'top-student-card';
+                card.innerHTML = `
+                    <div class="top-student-header"><span>${medal} ${st.name}</span></div>
+                    <div class="stat-bar-group">
+                        <div class="stat-bar-label"><span>Зроблено тестів:</span> <b>${st.testsDone}</b></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-tests" style="width: ${testPercent}%;"></div></div>
+                    </div>
+                    <div class="stat-bar-group">
+                        <div class="stat-bar-label"><span>Правильні відповіді:</span> <b>${st.correctAnswers}</b></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-answers" style="width: ${answerPercent}%;"></div></div>
+                    </div>
+                    <div class="stat-bar-group">
+                        <div class="stat-bar-label"><span>Час на порталі:</span> <b>${st.hoursSpent} год.</b></div>
+                        <div class="progress-bar-bg"><div class="progress-bar-fill fill-time" style="width: ${timePercent}%;"></div></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function updateWelcomeText() {
+            if (verifiedStatus) {
+                document.getElementById('welcomeUserText').innerText = currentTeacher && currentTeacher.approved 
+                    ? `Кабінет вчителя: ${currentTeacher.name} (Підтверджено ✅)` 
+                    : `Статус: ${verifiedStatus} ✨`;
+            }
+        }
+
+        function openAdminModal() { document.getElementById('adminModal').style.display = 'flex'; }
+        function closeAdminModal() { document.getElementById('adminModal').style.display = 'none'; }
+        
+        function checkAdminPass() {
+            const pass = document.getElementById('adminPassInput').value;
+            if (pass === 'timur12345') {
+                closeAdminModal();
+                document.getElementById('adminDashboardModal').style.display = 'flex';
+                document.getElementById('statTotalVisits').innerText = totalVisits;
+                
+                const paidTeachers = teacherRequests.filter(r => r.method === 'card').length;
+                const totalMoney = paidTeachers * 25;
+                document.getElementById('statTotalMoney').innerText = totalMoney + ' грн';
+
+                renderAdminRequests();
+            } else {
+                alert("Невірний пароль адміністратора!");
+            }
+        }
+        function closeAdminDashboard() { document.getElementById('adminDashboardModal').style.display = 'none'; }
+
+        function adminBypassTeacherLogin() {
+            currentTeacher = { name: "Тимур (Головний Адмін/Вчитель)", school: "Головна освітня платформа", email: "admin@portal.ua", approved: true };
+            localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+            closeAdminDashboard();
+            updateTeacherStatusBtn();
+            updateWelcomeText();
+            renderTests();
+            alert("Ви успішно увійшли як Головний Вчитель із повним доступом!");
+        }
+
+        function renderAdminRequests() {
+            const list = document.getElementById('adminRequestsList');
+            list.innerHTML = '';
+            if (teacherRequests.length === 0) {
+                list.innerHTML = '<p style="color: #94a3b8; text-align: center; padding: 15px;">Немає нових заяв вчителів.</p>';
+                return;
+            }
+            let html = '';
+            teacherRequests.forEach((req, idx) => {
+                html += `
+                    <div class="teacher-request-item">
+                        <p><b>Вчитель ПІБ:</b> ${req.name}</p>
+                        <p><b>Школа:</b> ${req.school}</p>
+                        <p><b>Статус:</b> <span style="color: ${req.approved ? '#10b981' : '#f59e0b'}">${req.approved ? 'Підтверджено' : 'Очікує'}</span></p>
+                        <div style="margin-top: 8px; display: flex; gap: 8px;">
+                            ${!req.approved ? `<button class="start-btn" style="padding: 6px 12px; font-size: 12px;" onclick="approveTeacher(${idx})">Схвалити ✓</button>` : ''}
+                            <button class="back-btn" style="padding: 6px 12px; font-size: 12px;" onclick="deleteTeacherReq(${idx})">Видалити ✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        function approveTeacher(idx) {
+            teacherRequests[idx].approved = true;
+            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+            renderAdminRequests();
+            alert("Заявку вчителя схвалено!");
+        }
+
+        function deleteTeacherReq(idx) {
+            teacherRequests.splice(idx, 1);
+            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+            renderAdminRequests();
+        }
+
+        function openTeacherAuthModal() {
+            const modal = document.getElementById('teacherAuthModal');
+            modal.style.display = 'flex';
+            if (currentTeacher && currentTeacher.approved) {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('teacherDashboardContent').style.display = 'block';
+                document.getElementById('authTitle').innerText = 'Кабінет вчителя (Відповіді) 👨‍🏫';
+                renderTeacherAnswers();
+            } else {
+                document.getElementById('teacherDashboardContent').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+            }
+        }
+        function closeTeacherModal() { document.getElementById('teacherAuthModal').style.display = 'none'; }
+        
+        function handleTeacherLogout() {
+            currentTeacher = null;
+            localStorage.removeItem('teacherAccount');
+            updateTeacherStatusBtn();
+            closeTeacherModal();
+            alert("Ви вийшли з акаунта вчителя.");
+        }
+
+        function renderTeacherAnswers() {
+            const container = document.getElementById('teacherAnswersListContainer');
+            container.innerHTML = '';
+            if (testsData.length === 0) { container.innerHTML = '<p style="color: #94a3b8;">Немає тестів.</p>'; return; }
+            testsData.forEach(test => {
+                let html = `<div class="teacher-answer-item"><b>[${test.classLevel}] ${test.title}</b><ul style="margin-left: 20px; margin-top: 5px; color: #38bdf8;">`;
+                test.questions.forEach((q, qIdx) => {
+                    html += `<li>Питання ${qIdx + 1}: <span style="color: #34d399;">${q.q}</span> → <b>${q.options[q.correct]}</b></li>`;
+                });
+                html += `</ul></div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        function toggleAuthMode(mode) {
+            if (mode === 'register') {
+                document.getElementById('loginForm').style.display = 'none';
+                document.getElementById('registerForm').style.display = 'block';
+                document.getElementById('authTitle').innerText = 'Реєстрація вчителя 📝';
+            } else {
+                document.getElementById('registerForm').style.display = 'none';
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('authTitle').innerText = 'Кабінет вчителя 👨‍🏫';
+            }
+        }
+
+        function handleTeacherRegister() {
+            const name = document.getElementById('regName').value.trim();
+            const school = document.getElementById('regSchool').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const pass = document.getElementById('regPass').value.trim();
+            const receipt = document.getElementById('receiptInput').value.trim();
+
+            if (!name || !email || !pass) { alert("Будь ласка, заповніть усі обов'язкові поля!"); return; }
+
+            const newReq = { name, school, email, pass, method: 'card', receipt, approved: false };
+            teacherRequests.push(newReq);
+            localStorage.setItem('teacherRequests', JSON.stringify(teacherRequests));
+            
+            currentTeacher = newReq;
+            localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+
+            closeTeacherModal();
+            updateTeacherStatusBtn();
+            updateWelcomeText();
+            alert("Заявку надіслано! Адміністратор перевірить дані.");
+        }
+
+        function handleTeacherLogin() {
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            const found = teacherRequests.find(r => r.email === email && r.pass === pass);
+            if (found) {
+                currentTeacher = found;
+                localStorage.setItem('teacherAccount', JSON.stringify(currentTeacher));
+                closeTeacherModal();
+                updateTeacherStatusBtn();
+                updateWelcomeText();
+                renderTests();
+                alert(`Вітаємо, вчителю ${found.name}!`);
+            } else {
+                alert("Невірний email або пароль!");
+            }
+        }
+
+        function updateTeacherStatusBtn() {
+            const btn = document.getElementById('btnTeacherCtrl');
+            if (currentTeacher) {
+                btn.innerText = currentTeacher.approved ? "Контрольні (Вчителі ✅)" : "Контрольні (На перевірці ⏳)";
+            } else {
+                btn.innerText = "Контрольні (Вчителі) 👨‍🏫";
+            }
+        }
+
+        // --- БАЗА ПИТАНЬ ---
+        const sampleQuestionsPool = [
+            { q: "Скільки буде 2 + 2 * 2 за правилами математики?", options: ["6", "8", "4", "2"], correct: 0, explain: "Спочатку виконується множення: 2 * 2 = 4, а потім додавання: 2 + 4 = 6." },
+            { q: "Яка планета Сонячної системи знаходиться найближче до Сонця?", options: ["Венера", "Меркурій", "Марс", "Земля"], correct: 1, explain: "Меркурій — перша планета від Сонця." },
+            { q: "Який материк є найбільшим за площею на Землі?", options: ["Африка", "Північна Америка", "Євразія", "Антарктида"], correct: 2, explain: "Євразія — найбільший континент." },
+            { q: "Скільки хвилин у трьох з половиною годинах?", options: ["180 хв", "210 хв", "190 хв", "240 хв"], correct: 1, explain: "3 години по 60 хв = 180 хв + 30 хв = 210 хвилин." },
+            { q: "Який газ переважає в атмосфері Землі?", options: ["Кисень", "Вуглекислий газ", "Азот", "Водень"], correct: 2, explain: "Азот становить приблизно 78% земної атмосфери." },
+            { q: "Хто написав знамениту поему «Енеїда» українською мовою?", options: ["Тарас Шевченко", "Іван Котляревський", "Іван Франко", "Леся Українка"], correct: 1, explain: "Іван Котляревський — автор першої епохальної книги нової української літератури." },
+            { q: "Яка одиниця вимірювання сили електричного струму?", options: ["Вольт", "Ом", "Ампер", "Ват"], correct: 2, explain: "Сила струму вимірюється в амперах (А)." },
+            { q: "У якому столітті було засновано місто Київ (за літописною традицією)?", options: ["V століття", "IX століття", "XI століття", "XII століття"], correct: 1, explain: "Київ засновано наприкінці V — на початку VI ст., а перша письмова згадка в літописах — кінець IX століття." },
+            { q: "Яка тварина є найшвидшою на суходолі?", options: ["Лев", "Антилопа гну", "Гепард", "Кінь"], correct: 2, explain: "Гепард здатен розвивати швидкість понад 100 км/год." },
+            { q: "Чому дорівнює число Пі (π) з округленням до сотих?", options: ["3.14", "3.16", "3.12", "3.18"], correct: 0, explain: "Число Пі приблизно дорівнює 3.14159..." },
+            { q: "Який океан є найбільшим і найглибшим на планеті?", options: ["Атлантичний", "Індійський", "Тихий", "Північний Льодовитий"], correct: 2, explain: "Тихий океан — найбільший і найглибший." },
+            { q: "Який орган людини споживає найбільше кисню у відсотковому співвідношенні до маси?", options: ["Серце", "Мозок", "Печінка", "Легені"], correct: 1, explain: "Головний мозок споживає близько 20% усього кисню організму." }
+        ];
+
+        const testsData = [];
+        const subjectsList = ['Історія України', 'Всесвітня історія', 'Біологія', 'Географія'];
+        const classesList = ['5 клас', '6 клас', '7 клас', '8 клас', '9 клас'];
+        const authorsList = ['Власов', 'Гісем', 'Остапченко', 'Пестушко', 'Соболь', 'Пометун', 'Бойко', 'Задорожний'];
+
+        let testCounter = 1;
+        classesList.forEach(cls => {
+            subjectsList.forEach(subj => {
+                for (let i = 1; i <= 6; i++) {
+                    const authorName = authorsList[(testCounter + i) % authorsList.length];
+                    const shuffledQuestions = [...sampleQuestionsPool].sort(() => Math.random() - 0.5);
+                    testsData.push({
+                        id: `test_${cls}_${subj}_${i}`,
+                        classLevel: cls,
+                        category: subj,
+                        author: authorName,
+                        title: `${cls}: ${subj} (Тест №${i} за ${authorName})`,
+                        desc: `Поглиблений інтерактивний тест на 12 питань для учнів ${cls} з предмету ${subj}.`,
+                        questions: shuffledQuestions
+                    });
+                    testCounter++;
+                }
+            });
+        });
+
+        classesList.forEach(cls => {
+            subjectsList.forEach(subj => {
+                const shuffledQuestions = [...sampleQuestionsPool].sort(() => Math.random() - 0.5);
+                testsData.push({
+                    id: `test_ctrl_${cls}_${subj}`,
+                    classLevel: cls,
+                    category: 'Контрольні роботи',
+                    author: 'Експертна комісія',
+                    title: `Велика підсумкова контрольна: ${cls} (${subj})`,
+                    desc: `Офіційна підсумкова контрольна робота з предмету ${subj} для перевірки знань за курс ${cls}.`,
+                    questions: shuffledQuestions
+                });
+            });
+        });
+
+        let currentQuiz = null, currentQuestionIdx = 0, score = 0, currentCategory = 'all', currentClass = 'all';
+
+        function filterCategory(cat, btn) {
+            currentCategory = cat;
+            document.querySelectorAll('.categories-nav .filter-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            const backBtn = document.getElementById('backToTestsBtn');
+            if (cat === 'Контрольні роботи') { backBtn.style.display = 'block'; }
+            else { backBtn.style.display = 'none'; }
+            renderTests();
+        }
+
+        function resetToAllTests() {
+            currentCategory = 'all';
+            currentClass = 'all';
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.classes-nav .filter-btn')[0].classList.add('active');
+            document.querySelectorAll('.categories-nav .filter-btn')[0].classList.add('active');
+            document.getElementById('backToTestsBtn').style.display = 'none';
+            renderTests();
+        }
+
+        function filterClass(cls, btn) {
+            currentClass = cls;
+            document.querySelectorAll('.classes-nav .filter-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            renderTests();
+        }
+
+        function renderTests() {
+            const grid = document.getElementById('testsGrid');
+            const searchInput = document.getElementById('searchInput');
+            const search = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            grid.innerHTML = '';
+
+            const isTeacherApproved = currentTeacher && currentTeacher.approved;
+
+            const filtered = testsData.filter(test => {
+                const matchCat = currentCategory === 'all' || test.category === currentCategory;
+                const matchClass = currentClass === 'all' || test.classLevel === currentClass;
+                const matchSearch = search === '' || 
+                    test.title.toLowerCase().includes(search) || 
+                    test.desc.toLowerCase().includes(search) || 
+                    test.category.toLowerCase().includes(search) ||
+                    test.author.toLowerCase().includes(search) ||
+                    test.classLevel.toLowerCase().includes(search);
+
+                return matchCat && matchClass && matchSearch;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; padding: 40px;">Нічого не знайдено за вашим запитом 🔍</div>';
+                return;
+            }
+
+            filtered.forEach((test) => {
+                let cardClass = 'test-card default';
+                if (currentCategory !== 'all') {
+                    if (test.category === 'Біологія') {
+                        cardClass = 'test-card bio';
+                    } else if (test.category === 'Географія') {
+                        cardClass = 'test-card geo';
+                    } else if (test.category === 'Історія України' || test.category === 'Всесвітня історія') {
+                        cardClass = 'test-card history';
+                    }
+                }
+
+                const card = document.createElement('div');
+                card.className = cardClass;
+                card.innerHTML = `
+                    <div class="badge-row">
+                        <span class="badge badge-class">${test.classLevel}</span>
+                        <span class="badge">${test.category}</span>
+                    </div>
+                    <span class="badge badge-author">${test.author}</span>
+                    <h3>${test.title}</h3>
+                    <p>${test.desc}</p>
+                    ${isTeacherApproved ? `<div style="font-size:12px; color:#10b981; font-weight:bold;">👨‍🏫 Режим вчителя: підказки активовані</div>` : ''}
+                    <div class="meta-info">
+                        <span>📝 ${test.questions.length} питань</span>
+                        <span>⏱️ ~ 7 хв</span>
+                    </div>
+                    <button class="start-btn" onclick="startQuiz('${test.id}')">Розпочати тест 🚀</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function startQuiz(testId) {
+            const now = Date.now();
+            if (now - lastClickTime < 600) return;
+            lastClickTime = now;
+
+            quizStartTime = Date.now();
+            currentQuiz = testsData.find(t => t.id === testId);
+            currentQuestionIdx = 0;
+            score = 0;
+            document.getElementById('menuView').style.display = 'none';
+            document.getElementById('resultsView').style.display = 'none';
+            document.getElementById('quizView').style.display = 'block';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const qData = currentQuiz.questions[currentQuestionIdx];
+            document.getElementById('quizProgress').innerText = `Питання ${currentQuestionIdx + 1} з ${currentQuiz.questions.length}`;
+            document.getElementById('questionText').innerText = qData.q;
+            
+            document.getElementById('explanationBox').style.display = 'none';
+            document.getElementById('nextBtn').style.display = 'none';
+
+            const optionsList = document.getElementById('optionsList');
+            optionsList.innerHTML = '';
+
+            const isTeacherApproved = currentTeacher && currentTeacher.approved;
+
+            qData.options.forEach((opt, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'option-wrapper';
+
+                const badge = document.createElement('div');
+                badge.className = 'feedback-badge';
+                badge.id = `feedbackBadge_${idx}`;
+
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.id = `optionBtn_${idx}`;
+                btn.innerText = opt + (isTeacherApproved && idx === qData.correct ? '  (✓ Правильна відповідь)' : '');
+                btn.onclick = () => selectOption(idx);
+
+                wrapper.appendChild(badge);
+                wrapper.appendChild(btn);
+                optionsList.appendChild(wrapper);
+            });
+        }
+
+        function selectOption(selectedIdx) {
+            const now = Date.now();
+            if (now - lastClickTime < 400) return;
+            lastClickTime = now;
+
+            const qData = currentQuiz.questions[currentQuestionIdx];
+            const buttons = document.querySelectorAll('.option-btn');
+            buttons.forEach(b => b.disabled = true);
+
+            const statusEl = document.getElementById('explanationStatus');
+            const explainTextEl = document.getElementById('explanationText');
+            const badge = document.getElementById(`feedbackBadge_${selectedIdx}`);
+
+            if (selectedIdx === qData.correct) {
+                buttons[selectedIdx].classList.add('correct');
+                badge.innerText = "Добре! ✨";
+                badge.className = "feedback-badge good";
+                badge.style.display = "block";
+
+                statusEl.innerText = "Правильно! 🎉";
+                statusEl.style.color = "#10b981";
+                score++;
+            } else {
+                buttons[selectedIdx].classList.add('wrong');
+                buttons[qData.correct].classList.add('correct');
+                
+                badge.innerText = "Не спиши! ❌";
+                badge.className = "feedback-badge bad";
+                badge.style.display = "block";
+
+                statusEl.innerText = "Неправильно ❌";
+                statusEl.style.color = "#ef4444";
+            }
+
+            explainTextEl.innerText = qData.explain;
+            document.getElementById('explanationBox').style.display = 'block';
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+
+        function nextQuestion() {
+            currentQuestionIdx++;
+            if (currentQuestionIdx < currentQuiz.questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            const timeElapsedSec = (Date.now() - quizStartTime) / 1000;
+            const timeElapsedHours = parseFloat((timeElapsedSec / 3600).toFixed(3));
+
+            document.getElementById('quizView').style.display = 'none';
+            document.getElementById('resultsView').style.display = 'block';
+            
+            const total = currentQuiz.questions.length;
+            const percent = (score / total) * 100;
+
+            let topUserIndex = studentsScores.findIndex(s => s.name === verifiedStatus);
+            if (topUserIndex !== -1) {
+                studentsScores[topUserIndex].testsDone += 1;
+                studentsScores[topUserIndex].correctAnswers += score;
+                studentsScores[topUserIndex].hoursSpent = parseFloat((studentsScores[topUserIndex].hoursSpent + timeElapsedHours).toFixed(2));
+            } else {
+                studentsScores.unshift({
+                    name: verifiedStatus || "Активний учень",
+                    testsDone: 1,
+                    correctAnswers: score,
+                    hoursSpent: Math.max(0.1, timeElapsedHours)
+                });
+            }
+            localStorage.setItem('studentsScores', JSON.stringify(studentsScores));
+
+            document.getElementById('scoreText').innerText = `Результат: ${score} з ${total}`;
+            document.getElementById('feedbackText').innerText = score === total 
+                ? `Супер! Чудовий результат, ти знаєш усе на максимум! 🔥` 
+                : `Непогано! Ознайомся з поясненнями та спробуй ще раз! 👍`;
+
+            const visualContainer = document.getElementById('resultVisualContainer');
+            visualContainer.innerHTML = '';
+            const subject = currentQuiz.category;
+
+            if (subject === 'Біологія') {
+                visualContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="position: relative; display: inline-block;">
+                            <div class="flask-neck"></div>
+                            <div class="flask-wrapper">
+                                <div class="flask-liquid" style="height: ${percent}%;"></div>
+                            </div>
+                        </div>
+                        <p style="color: #38bdf8; font-size: 13px; margin-top: 8px;">Рівень заповнення колби: ${Math.round(percent)}% 🧪</p>
+                    </div>
+                `;
+            } else if (subject === 'Географія') {
+                visualContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="display: flex; justify-content: center; margin-bottom: 8px;">
+                            <div class="globe-container">🌐</div>
+                        </div>
+                        <p style="color: #38bdf8; font-size: 13px;">Планета знань обертається для тебе! 🌍</p>
+                    </div>
+                `;
+            } else if (subject.includes('Історія')) {
+                visualContainer.innerHTML = `
+                    <div style="text-align: center;">
+                        <div class="history-artifacts-box">
+                            <span>⚔️</span>
+                            <span>🏺</span>
+                            <span>👑</span>
+                            <span>📜</span>
+                        </div>
+                        <p style="color: #38bdf8; font-size: 13px; margin-top: 10px;">Стародавні артефакти визнали твою мудрість! 🏛️</p>
+                    </div>
+                `;
+            } else {
+                visualContainer.innerHTML = `<div style="font-size: 50px;">🏆</div>`;
+            }
+        }
+
+        function showMenu() {
+            document.getElementById('quizView').style.display = 'none';
+            document.getElementById('resultsView').style.display = 'none';
+            document.getElementById('menuView').style.display = 'grid';
+            renderTests();
+            renderTopStudents();
+        }
+    </script>
+</body>
+</html>
